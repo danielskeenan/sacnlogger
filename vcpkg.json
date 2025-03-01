@@ -1,0 +1,21 @@
+{
+  "name" : "sacnlogger",
+  "version-string" : "1.0.0",
+  "builtin-baseline" : "efb1e7436979a30c4d3e5ab2375fd8e2e461d541",
+  "dependencies" : [ {
+    "name" : "spdlog",
+    "version>=" : "1.15.1"
+  }, {
+    "name" : "fmt",
+    "version>=" : "11.0.2#1"
+  }, {
+    "name" : "yaml-cpp",
+    "version>=" : "0.8.0#2"
+  }, {
+    "name" : "argparse",
+    "version>=" : "3.2"
+  }, {
+    "name" : "catch2",
+    "version>=" : "3.8.0"
+  } ]
+}

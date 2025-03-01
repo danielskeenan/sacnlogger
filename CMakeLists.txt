@@ -31,9 +31,11 @@ option(BUILD_EXEC "Build the executable program.  You probably want to do this."
 if (BUILD_EXEC)
     include_directories("${PROJECT_SOURCE_DIR}/include" "${PROJECT_BINARY_DIR}/include")
 
+    add_subdirectory(src)
+
     include(CTest)
     if (BUILD_TESTING)
-#        add_subdirectory(test)
+        add_subdirectory(test)
     endif ()
 endif ()
 
