@@ -42,15 +42,15 @@ namespace sacnlogger
         }
         catch (const YAML::Exception& e)
         {
-            SPDLOG_CRITICAL("Error loading config file: {}", e.what());
-            throw ConfigException("Error loading config file", e);
+            SPDLOG_CRITICAL("Error loading config file: {}.", e.what());
+            throw ConfigException("Error loading config file.", e);
         }
 
         // Verify format.
         if (!yaml.IsMap())
         {
-            SPDLOG_CRITICAL("Malformed config file: Not a map");
-            throw ConfigException("Malformed config file: Not a map");
+            SPDLOG_CRITICAL("Malformed config file: Not a map.");
+            throw ConfigException("Malformed config file: Not a map.");
         }
 
         // Universes.

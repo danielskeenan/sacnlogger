@@ -2,7 +2,7 @@
 # https://packages.ubuntu.com/search?searchon=names&keywords=cmake
 cmake_minimum_required(VERSION 3.28)
 project(sacnlogger
-        DESCRIPTION "Log sACN activity"
+        DESCRIPTION "Logs sACN activity across multiple universes and sources."
         VERSION 1.0.0
         LANGUAGES CXX
 )
