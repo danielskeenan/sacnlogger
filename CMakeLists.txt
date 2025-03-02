@@ -47,5 +47,5 @@ endif ()
 
 option(BUILD_DOC "Build documentation" ON)
 if (BUILD_DOC)
-#    add_subdirectory(doc)
+    add_subdirectory(doc)
 endif ()
