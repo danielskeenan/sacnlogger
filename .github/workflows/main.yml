@@ -45,7 +45,7 @@ jobs:
         run: >
           cmake
           -B "${BUILD_DIR}"
-          -DCMAKE_TOOLCHAIN_FILE="${VCPKG_INSTALLATION_ROOT}/scripts/buildsystems/vcpkg.cmake"
+          -DCMAKE_TOOLCHAIN_FILE="${VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake"
           -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
           -S "${{ github.workspace }}"
           -DBUILD_TESTING=On
