@@ -4,7 +4,7 @@ cmake_minimum_required(VERSION 3.28)
 project(sacnlogger
         DESCRIPTION "Logs sACN activity across multiple universes and sources."
         VERSION 0.1.0
-        HOMEPAGE_URL "https://github.com/danielskeenan/sacnlogger"
+        HOMEPAGE_URL "https://danielskeenan.github.io/sacnlogger/"
         LANGUAGES CXX
 )
 set(PROJECT_DISPLAY_NAME "sACN Logger")

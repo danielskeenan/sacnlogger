@@ -13,6 +13,7 @@ endif ()
 set(ENV{VIRTUAL_ENV} "${DOC_VENV_PATH}")
 set(Python3_FIND_VIRTUALENV ONLY)
 unset(Python3_EXECUTABLE)
+# Need to unset these env vars as otherwise GitHub Actions will force the system python, not the venv.
 unset(ENV{Python_ROOT_DIR})
 unset(ENV{Python3_ROOT_DIR})
 find_package(Python3 COMPONENTS Interpreter REQUIRED)
