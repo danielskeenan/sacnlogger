@@ -2,7 +2,7 @@ find_package(Python3 COMPONENTS Interpreter)
 
 set(DOC_VENV_PATH "${CMAKE_CURRENT_BINARY_DIR}/.venv")
 if (NOT IS_DIRECTORY "${DOC_VENV_PATH}")
-    message(STATUS "Creating Python venv for documentation...")
+    message(STATUS "Creating Python venv for documentation in ${DOC_VENV_PATH}...")
     execute_process(COMMAND "${Python3_EXECUTABLE}" -m venv "${DOC_VENV_PATH}")
 endif ()
 
