@@ -3,15 +3,23 @@ find_package(Python3 COMPONENTS Interpreter REQUIRED)
 set(DOC_VENV_PATH "${CMAKE_CURRENT_BINARY_DIR}/.venv")
 if (NOT IS_DIRECTORY "${DOC_VENV_PATH}")
     message(STATUS "Creating Python venv for documentation in ${DOC_VENV_PATH}...")
-    execute_process(COMMAND "${Python3_EXECUTABLE}" -m venv "${DOC_VENV_PATH}")
+    execute_process(
+            COMMAND "${Python3_EXECUTABLE}" -m venv "${DOC_VENV_PATH}"
+            COMMAND_ERROR_IS_FATAL ANY
+    )
 endif ()
 
 # See https://discourse.cmake.org/t/possible-to-create-a-python-virtual-env-from-cmake-and-then-find-it-with-findpython3/1132
 set(ENV{VIRTUAL_ENV} "${DOC_VENV_PATH}")
 set(Python3_FIND_VIRTUALENV ONLY)
 unset(Python3_EXECUTABLE)
+unset(ENV{Python_ROOT_DIR})
+unset(ENV{Python3_ROOT_DIR})
 find_package(Python3 COMPONENTS Interpreter REQUIRED)
-execute_process(COMMAND "${Python3_EXECUTABLE}" -m pip install -U -r "${CMAKE_CURRENT_SOURCE_DIR}/requirements.txt")
+execute_process(
+        COMMAND "${Python3_EXECUTABLE}" -m pip install -U -r "${CMAKE_CURRENT_SOURCE_DIR}/requirements.txt"
+        COMMAND_ERROR_IS_FATAL ANY
+)
 
 # Create build info to send to Sphinx
 set(SPHINX_BUILD_INFO "{ }")
