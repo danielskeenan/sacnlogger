@@ -38,8 +38,8 @@ jobs:
       - name: Logging
         if: ${{failure()}}
         run: |
-          ls -R "${SOURCE_DIR}/doc"
-          ls -R "${BUILD_DIR}/doc"
+          ls -AR "${SOURCE_DIR}/doc"
+          ls -AR "${BUILD_DIR}/doc"
 
       - name: Build
         run: cmake --build "${BUILD_DIR}" --target sacnlogger_doc_html
