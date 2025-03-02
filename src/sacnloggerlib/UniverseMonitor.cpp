@@ -54,14 +54,9 @@ namespace sacnlogger
             const auto sourceHandle = mergedData.active_sources[ix];
             if (const auto source = mergeReceiver->GetSource(sourceHandle))
             {
-                sources_.emplace(source->cid, source->name);
+                sources_.emplace(source->cid, source->addr, source->name);
             }
         }
-    }
-
-    std::weak_ordering ComparableSources::ComparableSource::operator<=>(const ComparableSource& rhs) const
-    {
-        return std::compare_weak_order_fallback(std::tie(cid, name), std::tie(rhs.cid, rhs.name));
     }
 
     void UniverseNotifyHandler::HandleMergedData(sacn::MergeReceiver::Handle handle,
@@ -75,9 +70,17 @@ namespace sacnlogger
             {
                 if (!lastSources_.sources_.contains(newSource))
                 {
+                    std::string action = "started";
+                    const auto ipAddr = newSource.ipAddr.ip().ToString();
+                    const auto ipAddrIt = cidIpAddrMap_.find(newSource.cid);
+                    if (ipAddrIt != cidIpAddrMap_.end())
+                    {
+                        action = "moved";
+                    }
+                    cidIpAddrMap_.insert_or_assign(newSource.cid, ipAddr);
                     CsvRow row;
-                    row << "started" << abbreviationMap_.abbreviationForUuid(newSource.cid) << newSource.cid.ToString()
-                        << newSource.name;
+                    row << action << abbreviationMap_.abbreviationForUuid(newSource.cid) << newSource.cid.ToString()
+                        << ipAddr << newSource.name;
                     sourceLogger_->info(row.string());
                 }
             }
@@ -111,21 +114,34 @@ namespace sacnlogger
             lastData_ = std::move(newData);
         }
     }
+
     void UniverseNotifyHandler::HandleNonDmxData(sacn::MergeReceiver::Handle receiverHandle,
                                                  const etcpal::SockAddr& sourceAddr, const SacnRemoteSource& sourceInfo,
                                                  const SacnRecvUniverseData& universeData)
     {
         // Do nothing.
     }
+
     void UniverseNotifyHandler::HandleSourcesLost(sacn::MergeReceiver::Handle handle, uint16_t universe,
                                                   const std::vector<SacnLostSource>& lostSources)
     {
         for (const auto& source : lostSources)
         {
+            const etcpal::Uuid sourceCid(etcpal::Uuid(source.cid));
+            const auto sourceIpAddr = [this, &sourceCid]() -> std::string
+            {
+                const auto sourceIpAddrIt = cidIpAddrMap_.find(sourceCid);
+                if (sourceIpAddrIt == cidIpAddrMap_.end())
+                {
+                    return "Unknown";
+                }
+                return sourceIpAddrIt->second;
+            }();
             CsvRow row;
             row << "stopped" << abbreviationMap_.abbreviationForUuid(source.cid) << etcpal::Uuid(source.cid).ToString()
-                << source.name;
+                << sourceIpAddr << source.name;
             sourceLogger_->info(row.string());
+            cidIpAddrMap_.erase(sourceCid);
         }
     }
 
@@ -143,15 +159,16 @@ namespace sacnlogger
         dataLogger_ = spdlog::rotating_logger_mt<spdlog::async_factory>(
             dataLoggerName, fmt::format("{}.csv", dataLoggerName), maxLogFileSize, maxLogFileCount);
         dataLogger_->set_pattern(kLoggerPattern);
+
         // Log a header line as a marker for beginning of monitoring.
-        sourceLogger_->info("State,Marker,CID,Name");
-        CsvRow sourceLoggerHeader;
+        sourceLogger_->info("State,Marker,CID,IP Address,Name");
+        CsvRow dataLoggerHeader;
         for (unsigned int addr = 1; addr <= SACN_MERGE_RECEIVER_MAX_SLOTS; ++addr)
         {
-            sourceLoggerHeader << fmt::format("{:03d} Lvl", addr) << fmt::format("{:03d} Pri", addr)
-                               << fmt::format("{:03d} Src", addr);
+            dataLoggerHeader << fmt::format("{:03d} Lvl", addr) << fmt::format("{:03d} Pri", addr)
+                             << fmt::format("{:03d} Src", addr);
         }
-        dataLogger_->info(sourceLoggerHeader.string());
+        dataLogger_->info(dataLoggerHeader.string());
 
         // Setup merge receiver.
         sacn::MergeReceiver::Settings settings(universe_);
@@ -159,7 +176,11 @@ namespace sacnlogger
         mergeReceiver_.reset(new sacn::MergeReceiver);
         notifyHandler_ =
             std::make_unique<UniverseNotifyHandler>(mergeReceiver_.get(), sourceLogger_.get(), dataLogger_.get());
-        mergeReceiver_->Startup(settings, *notifyHandler_);
+        const auto err = mergeReceiver_->Startup(settings, *notifyHandler_);
+        if (!err.IsOk())
+        {
+            SPDLOG_CRITICAL("Failed to start merge receiver for universe {}: {}", universe_, err.ToString());
+        }
     }
 
 } // namespace sacnlogger

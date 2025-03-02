@@ -67,13 +67,18 @@ namespace sacnlogger
     {
         struct ComparableSource
         {
-            std::weak_ordering operator<=>(const ComparableSource& rhs) const;
+            std::weak_ordering operator<=>(const ComparableSource& rhs) const
+            {
+                return std::compare_weak_order_fallback(std::tie(cid, ipAddr, name),
+                                                        std::tie(rhs.cid, rhs.ipAddr, rhs.name));
+            }
             friend bool operator==(const ComparableSource& lhs, const ComparableSource& rhs)
             {
-                return std::tie(lhs.cid, lhs.name) == std::tie(rhs.cid, rhs.name);
+                return std::tie(lhs.cid, lhs.ipAddr, lhs.name) == std::tie(rhs.cid, rhs.ipAddr, rhs.name);
             }
             friend bool operator!=(const ComparableSource& lhs, const ComparableSource& rhs) { return !(lhs == rhs); }
             etcpal::Uuid cid;
+            etcpal::SockAddr ipAddr;
             std::string name;
         };
         std::weak_ordering operator<=>(const ComparableSources&) const = default;
@@ -107,6 +112,7 @@ namespace sacnlogger
         spdlog::logger* sourceLogger_;
         spdlog::logger* dataLogger_;
         AbbreviationMap abbreviationMap_;
+        std::unordered_map<etcpal::Uuid, std::string> cidIpAddrMap_;
     };
 
     /**
