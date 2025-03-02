@@ -43,7 +43,10 @@ namespace sacnlogger
     std::string CsvRow::string() const
     {
         auto s = stream_.str();
-        s.pop_back();
+        if (!s.empty())
+        {
+            s.pop_back();
+        }
         return s;
     }
 } // namespace sacnlogger

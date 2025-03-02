@@ -51,4 +51,10 @@ TEST_CASE("CSV Row")
         row << 3 << "blind" << "mice";
         REQUIRE(row.string() == "3,\"blind\",\"mice\"");
     }
+
+    SECTION("Empty row")
+    {
+        sacnlogger::CsvRow row;
+        REQUIRE(row.string() == "");
+    }
 }

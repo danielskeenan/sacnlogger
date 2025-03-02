@@ -23,7 +23,9 @@
 #include <csignal>
 #include <etcpal/common.h>
 #include <sacn/cpp/common.h>
+#include <spdlog/spdlog.h>
 #include <thread>
+
 #include "EtcPalLogHandler.h"
 #include "sacnlogger_config.h"
 #include "sacnloggerlib/Config.h"
@@ -40,6 +42,7 @@ void sacnCleanup()
     universeMonitors.clear();
     sacn::Deinit();
     etcpal_deinit(ETCPAL_FEATURE_LOGGING);
+    spdlog::shutdown();
 }
 
 int main(int argc, char* argv[])

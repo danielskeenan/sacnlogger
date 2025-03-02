@@ -75,8 +75,10 @@ namespace sacnlogger
             {
                 if (!lastSources_.sources_.contains(newSource))
                 {
-                    sourceLogger_->info("Source {} (\"\"{}\"\") started.",
-                                        abbreviationMap_.abbreviationForUuid(newSource.cid), newSource.name);
+                    CsvRow row;
+                    row << "started" << abbreviationMap_.abbreviationForUuid(newSource.cid) << newSource.cid.ToString()
+                        << newSource.name;
+                    sourceLogger_->info(row.string());
                 }
             }
             lastSources_ = std::move(newSources);
@@ -105,7 +107,7 @@ namespace sacnlogger
                 const auto sourceName = *ownersIt == sacn::kInvalidRemoteSourceHandle ? "-" : sourceNames.at(*ownersIt);
                 row << static_cast<unsigned int>(*levelsIt) << static_cast<unsigned int>(*prioritiesIt) << sourceName;
             }
-            dataLogger_->info("{}", row.string());
+            dataLogger_->info(row.string());
             lastData_ = std::move(newData);
         }
     }
@@ -120,20 +122,36 @@ namespace sacnlogger
     {
         for (const auto& source : lostSources)
         {
-            sourceLogger_->info("Source {} (\"\"{}\"\" was lost.", abbreviationMap_.abbreviationForUuid(source.cid),
-                                source.name);
+            CsvRow row;
+            row << "stopped" << abbreviationMap_.abbreviationForUuid(source.cid) << etcpal::Uuid(source.cid).ToString()
+                << source.name;
+            sourceLogger_->info(row.string());
         }
     }
 
     void UniverseMonitor::start()
     {
         // Setup loggers.
+        // Source logger.
         const auto sourceLoggerName = fmt::format("U{:05d}_sources", universe_);
         sourceLogger_ = spdlog::rotating_logger_mt<spdlog::async_factory>(
-            sourceLoggerName, fmt::format("{}.log", sourceLoggerName), maxLogFileSize, maxLogFileCount);
+            sourceLoggerName, fmt::format("{}.csv", sourceLoggerName), maxLogFileSize, maxLogFileCount);
+        sourceLogger_->set_pattern(kLoggerPattern);
+
+        // Data logger.
         const auto dataLoggerName = fmt::format("U{:05d}_data", universe_);
         dataLogger_ = spdlog::rotating_logger_mt<spdlog::async_factory>(
-            dataLoggerName, fmt::format("{}.log", dataLoggerName), maxLogFileSize, maxLogFileCount);
+            dataLoggerName, fmt::format("{}.csv", dataLoggerName), maxLogFileSize, maxLogFileCount);
+        dataLogger_->set_pattern(kLoggerPattern);
+        // Log a header line as a marker for beginning of monitoring.
+        sourceLogger_->info("State,Marker,CID,Name");
+        CsvRow sourceLoggerHeader;
+        for (unsigned int addr = 1; addr <= SACN_MERGE_RECEIVER_MAX_SLOTS; ++addr)
+        {
+            sourceLoggerHeader << fmt::format("{:03d} Lvl", addr) << fmt::format("{:03d} Pri", addr)
+                               << fmt::format("{:03d} Src", addr);
+        }
+        dataLogger_->info(sourceLoggerHeader.string());
 
         // Setup merge receiver.
         sacn::MergeReceiver::Settings settings(universe_);

@@ -124,6 +124,8 @@ namespace sacnlogger
         void start();
 
     private:
+        static constexpr auto kLoggerPattern = "%Y-%m-%d %H:%M:%S.%e%z,%v";
+
         std::shared_ptr<spdlog::logger> sourceLogger_;
         std::shared_ptr<spdlog::logger> dataLogger_;
         std::unique_ptr<sacn::MergeReceiver, MergeReceiverDeleter> mergeReceiver_;
