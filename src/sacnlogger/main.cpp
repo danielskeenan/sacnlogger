@@ -20,15 +20,24 @@
  */
 
 #include <argparse/argparse.hpp>
+#include <csignal>
 #include <etcpal/common.h>
 #include <sacn/cpp/common.h>
-#include "sacnlogger/EtcPalLogHandler.h"
+#include <thread>
+#include "EtcPalLogHandler.h"
 #include "sacnlogger_config.h"
 #include "sacnloggerlib/Config.h"
 #include "sacnloggerlib/ConfigException.h"
+#include "sacnloggerlib/UniverseMonitor.h"
+
+bool termRequested = false;
+std::vector<sacnlogger::UniverseMonitor> universeMonitors;
+
+void sigTerm(int) { termRequested = true; }
 
 void sacnCleanup()
 {
+    universeMonitors.clear();
     sacn::Deinit();
     etcpal_deinit(ETCPAL_FEATURE_LOGGING);
 }
@@ -60,6 +69,9 @@ int main(int argc, char* argv[])
     sacn::Init(*etcpalLogger);
     std::atexit(sacnCleanup);
 
+    // Setup signal handling.
+    std::signal(SIGTERM, &sigTerm);
+
     // Load config.
     sacnlogger::Config config;
     try
@@ -71,6 +83,24 @@ int main(int argc, char* argv[])
         std::cerr << "Correct the error and run again." << std::endl;
         return EXIT_FAILURE;
     }
+
+    // Create monitors.
+    for (const auto universe : config.universes)
+    {
+        auto& universeMonitor = universeMonitors.emplace_back(universe);
+        universeMonitor.setUsePap(config.usePap);
+        universeMonitor.start();
+    }
+
+    auto waiter = std::thread(
+        []()
+        {
+            while (!termRequested)
+            {
+                std::this_thread::sleep_for(std::chrono::seconds(1));
+            }
+        });
+    waiter.join();
 
     return EXIT_SUCCESS;
 }

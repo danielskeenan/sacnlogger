@@ -47,7 +47,7 @@ namespace Catch
     };
 } // namespace Catch
 
-TEST_CASE("Load config file", "[Config]")
+TEST_CASE("Config Load")
 {
     SECTION("Good configs")
     {

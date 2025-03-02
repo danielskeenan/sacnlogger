@@ -19,9 +19,9 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include "EtcPalLogHandler.h"
 #include <chrono>
 #include <spdlog/spdlog.h>
-#include "sacnlogger/EtcPalLogHandler.h"
 
 namespace sacnlogger
 {

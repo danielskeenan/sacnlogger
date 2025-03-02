@@ -1,5 +1,8 @@
 add_library(sacnloggerlib STATIC
+        AbbreviationMap.cpp
         Config.cpp
+        CsvRow.cpp
+        UniverseMonitor.cpp
 )
 
 find_package(fmt CONFIG REQUIRED)

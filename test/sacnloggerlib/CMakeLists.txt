@@ -1,5 +1,7 @@
 add_executable(sacnloggerlib_test
+        AbbreviationMapTest.cpp
         ConfigTest.cpp
+        CsvRowTest.cpp
 )
 find_package(Catch2 3 REQUIRED)
 find_package(fmt CONFIG REQUIRED)
