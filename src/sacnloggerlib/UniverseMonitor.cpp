@@ -147,6 +147,7 @@ namespace sacnlogger
 
     void UniverseMonitor::start()
     {
+        SPDLOG_INFO("Starting universe monitor for universe {}", universe_);
         // Setup loggers.
         // Source logger.
         const auto sourceLoggerName = fmt::format("U{:05d}_sources", universe_);
@@ -180,6 +181,10 @@ namespace sacnlogger
         if (!err.IsOk())
         {
             SPDLOG_CRITICAL("Failed to start merge receiver for universe {}: {}", universe_, err.ToString());
+        }
+        else
+        {
+            SPDLOG_INFO("Started universe {}", universe_);
         }
     }
 

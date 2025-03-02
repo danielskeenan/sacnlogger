@@ -22,7 +22,9 @@
 #include <argparse/argparse.hpp>
 #include <csignal>
 #include <etcpal/common.h>
+#include <fmt/ranges.h>
 #include <sacn/cpp/common.h>
+#include <spdlog/sinks/rotating_file_sink.h>
 #include <spdlog/spdlog.h>
 #include <thread>
 
@@ -50,7 +52,6 @@ int main(int argc, char* argv[])
     argparse::ArgumentParser parser(sacnlogger::config::kProjectName, sacnlogger::config::kProjectVersion);
     parser.add_description(sacnlogger::config::kProjectDescription);
     parser.add_argument("config").help("path to configuration file");
-
     try
     {
         parser.parse_args(argc, argv);
@@ -61,6 +62,10 @@ int main(int argc, char* argv[])
         std::cerr << parser;
         return EXIT_FAILURE;
     }
+
+    // Setup logger.
+    spdlog::default_logger()->sinks().emplace_back(new spdlog::sinks::rotating_file_sink_mt("app.log", 5242880, 99));
+    SPDLOG_INFO("Starting sACN logger");
 
     // Setup EtcPal.
     etcpal_init(ETCPAL_FEATURE_LOGGING);
@@ -83,9 +88,10 @@ int main(int argc, char* argv[])
     }
     catch (const sacnlogger::ConfigException& e)
     {
-        std::cerr << "Correct the error and run again." << std::endl;
         return EXIT_FAILURE;
     }
+    SPDLOG_INFO("Using universes {}", config.universes);
+    SPDLOG_INFO("PAP = {}", config.usePap);
 
     // Create monitors.
     for (const auto universe : config.universes)
@@ -104,6 +110,8 @@ int main(int argc, char* argv[])
             }
         });
     waiter.join();
+
+    SPDLOG_INFO("Stopping sACN logger");
 
     return EXIT_SUCCESS;
 }
