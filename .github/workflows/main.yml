@@ -1,0 +1,94 @@
+name: CMake on multiple platforms
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+env:
+  SOURCE_DIR: ${{github.workspace}}
+  BUILD_DIR: ${{github.workspace}}/build
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ ubuntu-latest, windows-latest, macos-latest ]
+        build_type: [ Release ]
+
+    steps:
+      # See https://learn.microsoft.com/en-us/vcpkg/consume/binary-caching-github-actions-cache
+      - name: Export GitHub Actions cache environment variables
+        uses: actions/github-script@v7
+        with:
+          script: |
+            core.exportVariable('ACTIONS_CACHE_URL', process.env.ACTIONS_CACHE_URL || '');
+            core.exportVariable('ACTIONS_RUNTIME_TOKEN', process.env.ACTIONS_RUNTIME_TOKEN || '');
+
+      - name: Get number of CPU cores
+        uses: SimenB/github-actions-cpu-cores@v2
+        id: cpu-cores
+      - name: Set CMake Parallel level
+        run: |
+          echo "CMAKE_BUILD_PARALLEL_LEVEL=${{ steps.cpu-cores.outputs.count }}" >> ${GITHUB_ENV}
+          echo "CTEST_PARALLEL_LEVEL=1" >> ${GITHUB_ENV}
+
+      #######################
+      # BUILD
+      #######################
+      - uses: actions/checkout@v4
+
+      - name: Configure CMake
+        run: >
+          cmake
+          -B "${BUILD_DIR}"
+          -DCMAKE_TOOLCHAIN_FILE="${VCPKG_INSTALLATION_ROOT}/scripts/buildsystems/vcpkg.cmake"
+          -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
+          -S ${{ github.workspace }}
+          -DBUILD_TESTING=On
+
+      - name: Build
+        run: cmake --build "${BUILD_DIR}" --config ${{ matrix.build_type }}
+
+      #######################
+      # TEST
+      #######################
+      - name: Test
+        working-directory: ${{env.BUILD_DIR}}
+        run: ctest --build-config ${{ matrix.build_type }}
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v3
+        if: ${{ failure() }}
+        with:
+          name: test_results_${{runner.os}}
+          path: ${{env.BUILD_DIR}}/Testing/Temporary/LastTest.log
+
+      #######################
+      # PACKAGE
+      #######################
+      - name: Package
+        working-directory: ${{env.BUILD_DIR}}
+        run: cpack -B "${BUILD_DIR}/packages"
+
+      - name: Upload failed package artifacts
+        uses: actions/upload-artifact@v4
+        if: ${{ failure() }}
+        with:
+          name: failed_package_${{runner.os}}
+          path: ${{env.BUILD_DIR}}/packages
+
+      - name: Upload packages
+        uses: actions/upload-artifact@v4
+        with:
+          name: packages
+          path: ${{env.BUILD_DIR}}/packages/*.*
+          if-no-files-found: error
