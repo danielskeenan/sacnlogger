@@ -4,6 +4,7 @@ cmake_minimum_required(VERSION 3.28)
 project(sacnlogger
         DESCRIPTION "Logs sACN activity across multiple universes and sources."
         VERSION 1.0.0
+        HOMEPAGE_URL "https://github.com/danielskeenan/sacnlogger"
         LANGUAGES CXX
 )
 set(PROJECT_DISPLAY_NAME "sACN Logger")
@@ -36,6 +37,11 @@ if (BUILD_EXEC)
     include(CTest)
     if (BUILD_TESTING)
         add_subdirectory(test)
+    endif ()
+
+    option(BUILD_PACKAGE "Build packages/installers usable on this platform." OFF)
+    if (BUILD_PACKAGE)
+        add_subdirectory(install)
     endif ()
 endif ()
 

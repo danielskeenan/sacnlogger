@@ -46,6 +46,7 @@ CTestTestfile.cmake
 _deps
 CMakeUserPresets.json
 cmake-build-*
+install_root
 
 ### Other files
 config.yaml
