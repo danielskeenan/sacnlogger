@@ -16,13 +16,23 @@ defaults:
 
 jobs:
   build:
-    runs-on: ${{ matrix.os }}
+    runs-on: ${{ matrix.system.os }}
 
     strategy:
       fail-fast: false
       matrix:
-        os: [ ubuntu-latest, windows-latest, macos-latest ]
-        build_type: [ Release ]
+        system:
+          - os: ubuntu-latest
+            generator: Ninja
+          - os: windows-latest
+          - os: macos-13
+            generator: Ninja
+          - os: macos-latest
+            generator: Ninja
+        build_type:
+          - Release
+    env:
+      CMAKE_GENERATOR: ${{ matrix.system.generator }}
 
     steps:
       - uses: actions/checkout@v4
@@ -42,7 +52,12 @@ jobs:
         if: ${{runner.os == 'Linux'}}
         run: |
           sudo apt-get update
-          sudo apt-get -y install uuid-dev
+          sudo apt-get -y install ninja-build uuid-dev
+
+      - name: Install system deps (macOS)
+        if: ${{runner.os == 'macOS'}}
+        run: |
+          brew install ninja
 
       #######################
       # BUILD
@@ -98,6 +113,6 @@ jobs:
       - name: Upload packages
         uses: actions/upload-artifact@v4
         with:
-          name: packages_${{runner.os}}
+          name: packages_${{runner.os}}_${{runner.arch}}
           path: ${{env.BUILD_DIR}}/packages/*.*
           if-no-files-found: error
