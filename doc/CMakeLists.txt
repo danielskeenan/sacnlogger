@@ -1,4 +1,4 @@
-find_package(Python3 COMPONENTS Interpreter)
+find_package(Python3 COMPONENTS Interpreter REQUIRED)
 
 set(DOC_VENV_PATH "${CMAKE_CURRENT_BINARY_DIR}/.venv")
 if (NOT IS_DIRECTORY "${DOC_VENV_PATH}")
@@ -8,9 +8,9 @@ endif ()
 
 # See https://discourse.cmake.org/t/possible-to-create-a-python-virtual-env-from-cmake-and-then-find-it-with-findpython3/1132
 set(ENV{VIRTUAL_ENV} "${DOC_VENV_PATH}")
-set(Python3_FIND_VIRTUALENV FIRST)
+set(Python3_FIND_VIRTUALENV ONLY)
 unset(Python3_EXECUTABLE)
-find_package(Python3 COMPONENTS Interpreter)
+find_package(Python3 COMPONENTS Interpreter REQUIRED)
 execute_process(COMMAND "${Python3_EXECUTABLE}" -m pip install -U -r "${CMAKE_CURRENT_SOURCE_DIR}/requirements.txt")
 
 # Create build info to send to Sphinx
