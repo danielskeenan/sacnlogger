@@ -40,13 +40,13 @@ jobs:
       - name: Setup vcpkg
         uses: lukka/run-vcpkg@v11
 
-      - name: Get number of CPU cores
-        uses: SimenB/github-actions-cpu-cores@v2
-        id: cpu-cores
-      - name: Set CMake Parallel level
-        run: |
-          echo "CMAKE_BUILD_PARALLEL_LEVEL=${{ steps.cpu-cores.outputs.count }}" >> ${GITHUB_ENV}
-          echo "CTEST_PARALLEL_LEVEL=1" >> ${GITHUB_ENV}
+#      - name: Get number of CPU cores
+#        uses: SimenB/github-actions-cpu-cores@v2
+#        id: cpu-cores
+#      - name: Set CMake Parallel level
+#        run: |
+#          echo "CMAKE_BUILD_PARALLEL_LEVEL=${{ steps.cpu-cores.outputs.count }}" >> ${GITHUB_ENV}
+#          echo "CTEST_PARALLEL_LEVEL=1" >> ${GITHUB_ENV}
 
       - name: Install system deps (Linux)
         if: ${{runner.os == 'Linux'}}
@@ -71,13 +71,6 @@ jobs:
           -S "${{ github.workspace }}"
           -DBUILD_TESTING=On
           -DBUILD_PACKAGE=On
-
-      - name: Vcpkg failure
-        uses: actions/upload-artifact@v4
-        if: ${{failure()}}
-        with:
-          name: vcpkg_${{runner.os}}
-          path: ${{github.workspace}}/vcpkg/buildtrees/detect_compiler/*
 
       - name: Build
         run: cmake --build "${BUILD_DIR}" --config ${{ matrix.build_type }}
