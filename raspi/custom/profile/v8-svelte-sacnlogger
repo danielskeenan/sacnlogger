@@ -1,0 +1,11 @@
+# Minimum Debian footprint system with v8 kernel
+
+debian/bookworm/arm64/base-slim
+rpi/debian/bookworm/apt
+rpi/arm64/linux-image-v8
+rpi/base/essential
+rpi/boot-firmware
+rpi/misc-skel
+rpi/misc-utils
+sys-apps/systemd-net-min
+slim-customisations
