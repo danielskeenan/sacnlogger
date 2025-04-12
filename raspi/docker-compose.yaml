@@ -1,0 +1,12 @@
+services:
+  rpi_imagegen:
+    pull_policy: build
+    image: rpi-imagegen:latest
+    build:
+      context: ../
+      dockerfile: raspi/Dockerfile
+    privileged: true
+    stdin_open: true
+    tty: true
+    volumes:
+      - ./custom:/home/imagegen/custom

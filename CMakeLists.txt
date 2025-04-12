@@ -49,3 +49,8 @@ option(BUILD_DOC "Build documentation" ON)
 if (BUILD_DOC)
     add_subdirectory(doc)
 endif ()
+
+option(BUILD_RASPI "Build Raspberry Pi image" OFF)
+if (BUILD_RASPI)
+    add_subdirectory(raspi)
+endif ()
