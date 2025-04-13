@@ -21,21 +21,37 @@
 
 #include "EtcPalLogHandler.h"
 #include <chrono>
+#include <date/date.h>
+#include <date/tz.h>
 #include <spdlog/spdlog.h>
 
 namespace sacnlogger
 {
     etcpal::LogTimestamp EtcPalLogHandler::GetLogTimestamp()
     {
-        const auto now = std::chrono::system_clock::now();
-        const auto tz = std::chrono::current_zone();
-        const auto tzOffset = std::chrono::duration_cast<std::chrono::minutes>(tz->get_info(now).offset);
-        const auto days = std::chrono::floor<std::chrono::days>(now);
-        const std::chrono::year_month_day date(days);
-        const std::chrono::hh_mm_ss timestamp(now - days);
+        // TODO: Uncomment this code and remove the dependency on date when we don't have to target Debian bookworm,
+        // whose included stdlib doesn't have std::chrono::current_zone.
+
+        // const auto now = std::chrono::system_clock::now();
+        // const auto tz = std::chrono::current_zone();
+        // const auto tzOffset = std::chrono::duration_cast<std::chrono::minutes>(tz->get_info(now).offset);
+        // const auto days = std::chrono::floor<std::chrono::days>(now);
+        // const std::chrono::year_month_day date(days);
+        // const std::chrono::hh_mm_ss timestamp(now - days);
+        // return etcpal::LogTimestamp(static_cast<int>(date.year()), static_cast<unsigned>(date.month()),
+        //                             static_cast<unsigned>(date.day()), timestamp.hours().count(),
+        //                             timestamp.minutes().count(), timestamp.seconds().count(), 0, tzOffset.count());
+
+        // Workaround for missing std::chrono timezone api.
+        const auto now = date::make_zoned(date::current_zone(), std::chrono::system_clock::now());
+        const auto days = std::chrono::floor<std::chrono::days>(now.get_local_time());
+        const date::year_month_day date(days);
+        const date::hh_mm_ss timestamp(now.get_local_time() - days);
+        const auto tzOffset = std::chrono::duration_cast<std::chrono::minutes>(now.get_info().offset);
         return etcpal::LogTimestamp(static_cast<int>(date.year()), static_cast<unsigned>(date.month()),
                                     static_cast<unsigned>(date.day()), timestamp.hours().count(),
-                                    timestamp.minutes().count(), timestamp.seconds().count(), 0, tzOffset.count());
+                                    timestamp.minutes().count(), timestamp.seconds().count(), 0,
+                                    std::floor(tzOffset.count()));
     }
 
     void EtcPalLogHandler::HandleLogMessage(const EtcPalLogStrings& strings)
