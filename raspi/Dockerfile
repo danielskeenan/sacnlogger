@@ -1,4 +1,4 @@
-FROM debian:trixie-slim AS crossbuild_arm64
+FROM debian:bookworm-slim AS crossbuild_arm64
 
 # Setup arm64 compilation.
 RUN dpkg --add-architecture arm64 &&\
@@ -6,7 +6,6 @@ RUN dpkg --add-architecture arm64 &&\
     apt-get install -y \
     build-essential \
     ca-certificates \
-    cmake \
     crossbuild-essential-arm64 \
     curl \
     dpkg-dev \
@@ -19,6 +18,13 @@ RUN dpkg --add-architecture arm64 &&\
     uuid-dev:arm64 \
     wget \
     zip
+
+# Get a newer cmake than the one in the repo.
+RUN wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/null | gpg --dearmor - | tee /usr/share/keyrings/kitware-archive-keyring.gpg >/dev/null &&\
+    echo 'deb [signed-by=/usr/share/keyrings/kitware-archive-keyring.gpg] https://apt.kitware.com/ubuntu/ jammy main' | tee /etc/apt/sources.list.d/kitware.list >/dev/null &&\
+    apt-get update &&\
+    rm /usr/share/keyrings/kitware-archive-keyring.gpg &&\
+    apt-get install -y kitware-archive-keyring cmake
 
 # Setup vcpkg.
 ENV VCPKG_DEFAULT_TRIPLET=arm64-linux
