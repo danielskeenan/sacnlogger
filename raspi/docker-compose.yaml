@@ -1,12 +1,24 @@
 services:
-  rpi_imagegen:
+  crossbuild_arm64:
     pull_policy: build
-    image: rpi-imagegen:latest
+    image: sacnlogger_crossbuild_arm64:latest
     build:
       context: ../
       dockerfile: raspi/Dockerfile
+      target: crossbuild_arm64
+    volumes:
+      - vcpkg_cache:/root/.vcpkg-cache
+
+  rpi_imagegen:
+    pull_policy: build
+    image: sacnlogger_rpi-imagegen:latest
+    build:
+      context: ../
+      dockerfile: raspi/Dockerfile
+      target: rpi_imagegen
     privileged: true
     stdin_open: true
     tty: true
-    volumes:
-      - ./custom:/home/imagegen/custom
+
+volumes:
+  vcpkg_cache:

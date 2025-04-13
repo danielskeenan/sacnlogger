@@ -1,5 +1,5 @@
 ---
-name: slim
+name: example-slim
 mmdebstrap:
   customize-hooks:
     - chroot $1 sh -c "useradd -m -s /bin/bash -u 4000 $IGconf_device_user1"

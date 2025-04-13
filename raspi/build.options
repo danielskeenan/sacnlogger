@@ -1,2 +1,3 @@
 image_version="@PROJECT_VERSION@"
 image_name="@PROJECT_NAME@-${IGconf_image_version}-raspi5"
+debstore=${IGconf_ext_dir}/pkgs

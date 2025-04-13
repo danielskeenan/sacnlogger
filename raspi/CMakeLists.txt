@@ -18,9 +18,9 @@ file(GLOB_RECURSE OVERLAY_FILES LIST_DIRECTORIES false CONFIGURE_DEPENDS
         entrypoint.sh
 )
 
-# Do the thing.
+# Build image.
 add_custom_command(OUTPUT "${RASPI5_IMG}"
-        COMMAND "${DOCKER_PROG}" compose run
+        COMMAND ${CMAKE_COMMAND} -E env BUILDKIT_PROGRESS=plain "${DOCKER_PROG}" compose run
         --build
         --volume "${CMAKE_CURRENT_BINARY_DIR}/build.options:/home/imagegen/build.options"
         --volume "${RASPI5_IMG_DIR}:/home/imagegen/work/deploy"
