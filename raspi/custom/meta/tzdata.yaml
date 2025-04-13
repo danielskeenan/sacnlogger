@@ -1,0 +1,6 @@
+---
+# Needed so logger knows how to log dates.
+name: tzdata
+mmdebstrap:
+  packages:
+    - tzdata

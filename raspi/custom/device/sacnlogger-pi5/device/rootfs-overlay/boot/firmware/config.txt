@@ -10,6 +10,9 @@
 # Enable audio (loads snd_bcm2835)
 dtparam=audio=off
 
+# Charge the RTC battery
+dtparam=rtc_bbat_vchg=3000000
+
 # Additional overlays and parameters are documented
 # /boot/firmware/overlays/README
 
