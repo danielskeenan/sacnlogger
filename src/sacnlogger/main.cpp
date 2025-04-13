@@ -37,7 +37,7 @@
 bool termRequested = false;
 std::vector<sacnlogger::UniverseMonitor> universeMonitors;
 
-void sigTerm(int) { termRequested = true; }
+void requestTerm(int) { termRequested = true; }
 
 void sacnCleanup()
 {
@@ -78,7 +78,9 @@ int main(int argc, char* argv[])
     std::atexit(sacnCleanup);
 
     // Setup signal handling.
-    std::signal(SIGTERM, &sigTerm);
+    std::signal(SIGTERM, &requestTerm);
+    std::signal(SIGINT, &requestTerm);
+    std::signal(SIGQUIT, &requestTerm);
 
     // Load config.
     sacnlogger::Config config;
