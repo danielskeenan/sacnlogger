@@ -80,7 +80,9 @@ int main(int argc, char* argv[])
     // Setup signal handling.
     std::signal(SIGTERM, &requestTerm);
     std::signal(SIGINT, &requestTerm);
+#ifdef SIGQUIT
     std::signal(SIGQUIT, &requestTerm);
+#endif
 
     // Load config.
     sacnlogger::Config config;
