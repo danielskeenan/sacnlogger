@@ -5,7 +5,7 @@ sudo su -c "mount binfmt_misc -t binfmt_misc /proc/sys/fs/binfmt_misc && echo 1 
 
 echo "Updating deps..."
 sudo apt-get update
-sudo rpi-image-gen/install_deps.sh
+sudo ~/rpi-image-gen/install_deps.sh
 
 echo "Building image..."
-~/rpi-image-gen/build.sh -D ~/custom -c sacnlogger "$@"
+~/rpi-image-gen/build.sh -D ~/custom "$@"

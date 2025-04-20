@@ -1,0 +1,36 @@
+---
+name: build-tools
+mmdebstrap:
+  mirrors:
+    - deb https://apt.kitware.com/ubuntu/ jammy main
+  packages:
+    - build-essential
+    - cmake
+    - curl
+    - gdb
+    - git
+    - make
+    - ninja-build
+    - pkg-config
+    - python3-venv
+    - python3-pip
+    - rsync
+    - unzip
+    - zip
+    # Build dependencies
+    - uuid-dev
+  setup-hooks:
+    - mkdir -p $1/usr/share/keyrings
+    - curl -fsSL https://apt.kitware.com/keys/kitware-archive-latest.asc -o $1/usr/share/keyrings/kitware-archive-keyring.asc
+    - chmod a+r $1/usr/share/keyrings/kitware-archive-keyring.asc
+    - cp -p $1/usr/share/keyrings/kitware-archive-keyring.asc $IGconf_sys_apt_keydir
+  customize-hooks:
+    - mkdir -p $1/etc/apt/sources.list.d
+    - |-
+      cat <<- EOF > $1/etc/apt/sources.list.d/kitware.list
+      deb [signed-by=/usr/share/keyrings/kitware-archive-keyring.asc] https://apt.kitware.com/ubuntu/ jammy main
+      EOF
+    - sed -i '/apt\.kitware\.com/d' $1/etc/apt/sources.list
+    - git clone https://github.com/microsoft/vcpkg.git $1/home/${IGconf_device_user1}/.vcpkg
+    - chroot $1 sh -c "cd /home/${IGconf_device_user1}/.vcpkg && ./bootstrap-vcpkg.sh"
+    - chroot $1 sh -c "chown -R ${IGconf_device_user1}:${IGconf_device_user1} /home/${IGconf_device_user1}/.vcpkg"

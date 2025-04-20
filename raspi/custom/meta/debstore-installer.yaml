@@ -5,7 +5,7 @@ mmdebstrap:
   - |-
     if [ -n "$IGconf_debstore" ] ; then
        mkdir -p $1/tmp/debs && cp -a ${IGconf_debstore}/*.deb $1/tmp/debs
-       chroot $1 sh -c "apt install -y /tmp/debs/*.deb"
+       chroot $1 sh -c "dpkg -i /tmp/debs/*.deb"
     fi
   cleanup-hooks:
   - rm -rf $1/tmp/debs

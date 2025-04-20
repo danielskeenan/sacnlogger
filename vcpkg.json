@@ -9,9 +9,6 @@
     "name" : "fmt",
     "version>=" : "11.0.2#1"
   }, {
-    "name" : "yaml-cpp",
-    "version>=" : "0.8.0#2"
-  }, {
     "name" : "argparse",
     "version>=" : "3.2"
   }, {

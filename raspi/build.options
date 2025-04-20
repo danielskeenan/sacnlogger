@@ -1,3 +1,4 @@
 image_version="@PROJECT_VERSION@"
-image_name="@PROJECT_NAME@-${IGconf_image_version}-raspi5"
+image_name="sacnlogger-${IGconf_image_version}-raspi5$<$<CONFIG:Debug>:-debug>"
 debstore=${IGconf_ext_dir}/pkgs
+$<$<CONFIG:Debug>:sys_flavour=debug>
