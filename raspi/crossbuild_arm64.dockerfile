@@ -32,7 +32,6 @@ ENV VCPKG_ROOT=/root/.vcpkg
 # VCPKG Caching (https://learn.microsoft.com/en-us/vcpkg/users/binarycaching)
 ENV VCPKG_DEFAULT_BINARY_CACHE=/root/.vcpkg-cache
 RUN mkdir ${VCPKG_DEFAULT_BINARY_CACHE}
-VOLUME ${VCPKG_DEFAULT_BINARY_CACHE}
 RUN git clone https://github.com/microsoft/vcpkg.git ${VCPKG_ROOT} &&\
     cd ${VCPKG_ROOT} && \
     ./bootstrap-vcpkg.sh
@@ -57,16 +56,3 @@ COPY . /work/
 WORKDIR /work
 
 CMD ["sh"]
-
-ARG build_type=release
-RUN cmake \
-    -B "cmake-build-${build_type}" \
-    -DCMAKE_TOOLCHAIN_FILE="${VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake" \
-    -DVCPKG_TARGET_TRIPLET=arm64-linux-crossbuild \
-    -DCMAKE_BUILD_TYPE=${build_type} \
-    -S . \
-    -DBUILD_DOC=Off \
-    -DBUILD_TESTING=Off \
-    -DBUILD_PACKAGE=On
-
-RUN cmake --build "cmake-build-${build_type}" --config ${build_type}

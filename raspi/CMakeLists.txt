@@ -16,22 +16,37 @@ file(GLOB_RECURSE OVERLAY_FILES LIST_DIRECTORIES false CONFIGURE_DEPENDS
 )
 
 # Build image.
-set(RASPI5_DEB "${CMAKE_CURRENT_BINARY_DIR}/pkgs/${PROJECT_NAME}_${PROJECT_VERSION}_arm64.deb")
+set(RASPI5_DEB "${CMAKE_CURRENT_BINARY_DIR}/cross-cmake-build/packages/${PROJECT_NAME}_${PROJECT_VERSION}_arm64.deb")
 add_custom_command(OUTPUT "${RASPI5_DEB}"
         COMMAND ${CMAKE_COMMAND} -E env BUILDKIT_PROGRESS=plain "${DOCKER_PROG}" build
         --file "${PROJECT_SOURCE_DIR}/raspi/crossbuild_arm64.dockerfile"
-        --build-arg build_type=$<LOWER_CASE:$<CONFIG>>
-        --tag sacnlogger_crossbuild_arm64:$<LOWER_CASE:$<CONFIG>>
+        --tag sacnlogger_crossbuild_arm64:latest
         .
         COMMAND ${CMAKE_COMMAND} -E env BUILDKIT_PROGRESS=plain "${DOCKER_PROG}" run
-        --workdir /work/cmake-build-$<LOWER_CASE:$<CONFIG>>
-        --name crossbuild_arm64_$<LOWER_CASE:$<CONFIG>>
-        sacnlogger_crossbuild_arm64:$<LOWER_CASE:$<CONFIG>>
+        --volume "${CMAKE_CURRENT_BINARY_DIR}/cross-cmake-build:/work/cmake-build"
+        --volume "${CMAKE_CURRENT_BINARY_DIR}/cross-vcpkg-cache:/root/.vcpkg-cache"
+        --rm
+        sacnlogger_crossbuild_arm64:latest
+        cmake -B "cmake-build" -S .
+        -DCMAKE_TOOLCHAIN_FILE=/root/.vcpkg/scripts/buildsystems/vcpkg.cmake
+        -DVCPKG_TARGET_TRIPLET=arm64-linux-crossbuild
+        -DCMAKE_BUILD_TYPE=$<CONFIG>
+        -DBUILD_DOC=Off
+        -DBUILD_TESTING=Off
+        -DBUILD_PACKAGE=On
+        COMMAND ${CMAKE_COMMAND} -E env BUILDKIT_PROGRESS=plain "${DOCKER_PROG}" run
+        --volume "${CMAKE_CURRENT_BINARY_DIR}/cross-cmake-build:/work/cmake-build"
+        --volume "${CMAKE_CURRENT_BINARY_DIR}/cross-vcpkg-cache:/root/.vcpkg-cache"
+        --rm
+        sacnlogger_crossbuild_arm64:latest
+        cmake --build "cmake-build" --config $<CONFIG>
+        COMMAND ${CMAKE_COMMAND} -E env BUILDKIT_PROGRESS=plain "${DOCKER_PROG}" run
+        --volume "${CMAKE_CURRENT_BINARY_DIR}/cross-cmake-build:/work/cmake-build"
+        --volume "${CMAKE_CURRENT_BINARY_DIR}/cross-vcpkg-cache:/root/.vcpkg-cache"
+        --rm
+        --workdir /work/cmake-build
+        sacnlogger_crossbuild_arm64:latest
         cpack -B "./packages" -G DEB
-        COMMAND ${CMAKE_COMMAND} -E env BUILDKIT_PROGRESS=plain "${DOCKER_PROG}" cp
-        "crossbuild_arm64_$<LOWER_CASE:$<CONFIG>>:/work/cmake-build-$<LOWER_CASE:$<CONFIG>>/packages/${PROJECT_NAME}_${PROJECT_VERSION}_arm64.deb"
-        "${RASPI5_DEB}"
-        COMMAND ${CMAKE_COMMAND} -E env BUILDKIT_PROGRESS=plain "${DOCKER_PROG}" container rm "crossbuild_arm64_$<LOWER_CASE:$<CONFIG>>"
         VERBATIM
         DEPENDS ${PROJECT_NAME}
         USES_TERMINAL
@@ -43,17 +58,15 @@ add_custom_command(OUTPUT "${RASPI5_IMG}"
         --tag rpi_imagegen:latest
         .
         COMMAND ${CMAKE_COMMAND} -E env BUILDKIT_PROGRESS=plain "${DOCKER_PROG}" run
-        --workdir /work/cmake-build-$<LOWER_CASE:$<CONFIG>>
-        --volume "${CMAKE_CURRENT_BINARY_DIR}/build_$<CONFIG>.options:/home/imagegen/build.options"
+        --volume "${CMAKE_CURRENT_BINARY_DIR}/build_$<LOWER_CASE:$<CONFIG>>.options:/home/imagegen/build.options"
         --volume "${RASPI5_DEB}:/home/imagegen/custom/pkgs/${PROJECT_NAME}_${PROJECT_VERSION}_arm64.deb"
         --volume "${RASPI5_IMG_DIR}:/home/imagegen/work/deploy"
+        --rm
         --privileged
-        --name rpi_imagegen_$<LOWER_CASE:$<CONFIG>>
         rpi_imagegen:latest
         -c sacnlogger$<IF:$<CONFIG:Debug>,_debug,_release> -o /home/imagegen/build.options
-        COMMAND ${CMAKE_COMMAND} -E env BUILDKIT_PROGRESS=plain "${DOCKER_PROG}" container rm "rpi_imagegen_$<LOWER_CASE:$<CONFIG>>"
         VERBATIM
-        DEPENDS ${OVERLAY_FILES}
+        DEPENDS "${RASPI5_DEB}" ${OVERLAY_FILES}
         USES_TERMINAL
         WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
 )
@@ -62,7 +75,7 @@ add_custom_target(${PROJECT_NAME}_raspi5 DEPENDS "${RASPI5_IMG}")
 # Need to do this in two steps as configure_file doesn't know about generator expressions and file(GENERATE) doesn't
 # know about variable substitution. (https://discourse.cmake.org/t/configuring-a-file-that-has-both-substitution-and-generator-expressions/3064)
 configure_file(build.options "${CMAKE_CURRENT_BINARY_DIR}/build.options.in" @ONLY NEWLINE_STYLE UNIX)
-file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/build_$<CONFIG>.options"
+file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/build_$<LOWER_CASE:$<CONFIG>>.options"
         INPUT "${CMAKE_CURRENT_BINARY_DIR}/build.options.in"
         TARGET ${PROJECT_NAME}_raspi5
         NEWLINE_STYLE UNIX

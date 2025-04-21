@@ -59,7 +59,6 @@ RUN useradd -u 4000 -ms /bin/bash "$USER" && echo "${USER}:${USER}" | chpasswd &
 USER ${USER}
 WORKDIR /home/${USER}
 
-VOLUME /home/${USER}/work
 RUN mkdir -p /home/${USER}/work/deploy
 
 ARG RPIIG_GIT_SHA=ba410bccd3f690a49cb8ec7a724cb59d08a4257e
