@@ -52,6 +52,7 @@ add_custom_command(OUTPUT "${RASPI5_DEB}"
         USES_TERMINAL
         WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
 )
+add_custom_target(${PROJECT_NAME}_raspi5_deb DEPENDS "${RASPI5_DEB}")
 add_custom_command(OUTPUT "${RASPI5_IMG}"
         COMMAND ${CMAKE_COMMAND} -E env BUILDKIT_PROGRESS=plain "${DOCKER_PROG}" build
         --file "${PROJECT_SOURCE_DIR}/raspi/rpi_imagegen.dockerfile"

@@ -11,11 +11,15 @@ set(CPACK_STRIP_FILES On)
 
 set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE.txt")
 if (CMAKE_SYSTEM_NAME STREQUAL "Linux")
-    set(CPACK_GENERATOR "TGZ")
-    set(CPACK_DEBIAN_FILE_NAME "DEB-DEFAULT")
+    # TODO: Find a way to stop generating the "Unspecified" packages.
+    set(CPACK_GENERATOR "TGZ;DEB;RPM")
+    set(CPACK_MONOLITHIC_INSTALL OFF)
+    set(CPACK_DEB_COMPONENT_INSTALL ON)
+    set(CPACK_RPM_COMPONENT_INSTALL ON)
+    set(CPACK_RPM_MAIN_COMPONENT "main")
+    set(CPACK_RPM_PACKAGE_LICENSE "GPL-v3")
     set(CPACK_DEBIAN_PACKAGE_DEPENDS "libc6:arm64 (>= 2.36), libstdc++6")
-    set(CPACK_DEBIAN_PACKAGE_SECTION "net")
-    set(CPACK_DEBIAN_PACKAGE_NAME "sacnlogger")
+    set(CPACK_DEBIAN_ENABLE_COMPONENT_DEPENDS ON)
     find_program(DPKG_ARCHITECTURE_PROG dpkg-architecture)
     if (DPKG_ARCHITECTURE_PROG)
         execute_process(COMMAND dpkg-architecture -q DEB_TARGET_ARCH
@@ -38,3 +42,26 @@ elseif (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
 endif ()
 
 include(CPack)
+
+if (TARGET ${PROJECT_NAME})
+    cpack_add_component(main
+            DISPLAY_NAME Logger
+            DESCRIPTION sacnlogger program
+            REQUIRED
+    )
+endif ()
+if (TARGET sacnlogger_monitor)
+    cpack_add_component(monitor
+            DISPLAY_NAME Monitor
+            DESCRIPTION Launch sacnlogger for remote unattended use.
+            DEPENDS main
+    )
+endif ()
+message(STATUS "${CPACK_COMPONENTS_ALL}")
+
+add_custom_target(packages
+        COMMAND "${CMAKE_CPACK_COMMAND}" -B "${CMAKE_CURRENT_BINARY_DIR}"
+        VERBATIM
+        WORKING_DIRECTORY "${PROJECT_BINARY_DIR}"
+        COMMENT "Building packages..."
+)
