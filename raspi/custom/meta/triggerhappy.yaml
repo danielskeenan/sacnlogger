@@ -1,0 +1,17 @@
+---
+name: triggerhappy
+mmdebstrap:
+  packages:
+    - triggerhappy
+  customize-hooks:
+    # Tell triggerhappy to handle poweroff.
+    - mkdir -p $1/etc/triggerhappy/triggers.d
+    - echo "KEY_POWER 1 poweroff" > $1/etc/triggerhappy/triggers.d/powerbtn.conf
+    # Need to have triggerhappy run as root to allow it to shutdown the system.
+    - mkdir -p $1/etc/systemd/system/triggerhappy.service.d
+    - |-
+      cat <<- EOF > $1/etc/systemd/system/triggerhappy.service.d/override.conf
+      [Service]
+      ExecStart=
+      ExecStart=/usr/sbin/thd --triggers /etc/triggerhappy/triggers.d/ --socket /run/thd.socket --user root --deviceglob /dev/input/event*
+      EOF

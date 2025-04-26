@@ -12,15 +12,15 @@ RUN dpkg --add-architecture arm64 &&\
     file \
     git \
     gpg \
-    libboost-dev:arm64 \
-    libboost-filesystem-dev \
     pkg-config \
     qemu-user \
     qemu-user-static \
     sudo \
-    uuid-dev:arm64 \
     wget \
-    zip
+    zip \
+    libboost-dev:arm64 \
+    libboost-filesystem-dev:arm64 \
+    uuid-dev:arm64
 
 # Get a newer cmake than the one in the repo.
 RUN wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/null | gpg --dearmor - | tee /usr/share/keyrings/kitware-archive-keyring.gpg >/dev/null &&\
