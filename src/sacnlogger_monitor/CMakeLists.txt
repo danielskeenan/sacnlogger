@@ -2,12 +2,15 @@ add_executable(sacnlogger_monitor
         main.cpp
 )
 
+find_package(argparse CONFIG REQUIRED)
 find_package(fmt CONFIG REQUIRED)
 find_package(spdlog CONFIG REQUIRED)
 target_link_libraries(sacnlogger_monitor PRIVATE
+        argparse::argparse
         fmt::fmt
         spdlog::spdlog
 )
+add_dependencies(sacnlogger_monitor ${PROJECT_NAME})
 
 install(TARGETS sacnlogger_monitor COMPONENT monitor)
 list(APPEND CPACK_COMPONENTS_ALL monitor)
