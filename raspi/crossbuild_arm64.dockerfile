@@ -12,6 +12,8 @@ RUN dpkg --add-architecture arm64 &&\
     file \
     git \
     gpg \
+    libboost-dev:arm64 \
+    libboost-filesystem-dev \
     pkg-config \
     qemu-user \
     qemu-user-static \

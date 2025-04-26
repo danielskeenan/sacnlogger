@@ -18,6 +18,8 @@ mmdebstrap:
     - unzip
     - zip
     # Build dependencies
+    - libboost-dev
+    - libboost-filesystem-dev
     - uuid-dev
   setup-hooks:
     - mkdir -p $1/usr/share/keyrings

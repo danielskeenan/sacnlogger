@@ -19,47 +19,53 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include <argparse/argparse.hpp>
+#include <boost/process/child.hpp>
+#include <boost/process/io.hpp>
+#include <boost/process/search_path.hpp>
+#include <csignal>
 #include <filesystem>
 #include <fmt/format.h>
+#include <iostream>
+#include <spdlog/sinks/rotating_file_sink.h>
+#include <spdlog/sinks/stdout_color_sinks.h>
 #include <spdlog/spdlog.h>
-
-#include "argparse/argparse.hpp"
+#include <thread>
 #include "sacnlogger_config.h"
 
-static constexpr auto kDiskDevice = "/dev/sacnlogger-disk";
 static constexpr auto kDiskDir = "/media/sacnlogger/disk";
 static constexpr auto kConfigFile = "config.yaml";
 
+bool termRequested = false;
+static boost::process::child exe;
+
 bool diskAvailable()
 {
-    spdlog::debug("Checking if {} is available.", kDiskDevice);
-    if (!std::filesystem::is_symlink(kDiskDevice))
-    {
-        spdlog::debug("{} not available.", kDiskDevice);
-        return false;
-    }
-    const auto diskDev = std::filesystem::path(kDiskDevice).parent_path() / std::filesystem::read_symlink(kDiskDevice);
-    spdlog::debug("Checking if {} is a block file.", diskDev.string());
-    if (!std::filesystem::is_block_file(diskDev))
-    {
-        spdlog::debug("{} not a block file.", diskDev.string());
-        return false;
-    }
-    spdlog::debug("Checking if {} mounted.", kDiskDir);
+    SPDLOG_DEBUG("Checking if {} mounted.", kDiskDir);
     if (!std::filesystem::is_directory(kDiskDir))
     {
-        spdlog::debug("{} not a directory.", kDiskDir);
+        SPDLOG_DEBUG("{} not a directory.", kDiskDir);
         return false;
     }
     const auto configPath = std::filesystem::path(kDiskDir) / kConfigFile;
-    spdlog::debug("Checking for config file '{}'.", configPath.string());
+    SPDLOG_DEBUG("Checking for config file '{}'.", configPath.string());
     if (!std::filesystem::is_regular_file(configPath))
     {
-        spdlog::debug("{} not a file.", configPath.string());
+        SPDLOG_DEBUG("{} not a file.", configPath.string());
+        return false;
+    }
+    SPDLOG_DEBUG("Checking if config file '{}' is readable.");
+    std::ifstream configFile(configPath.string());
+    if (!configFile.is_open())
+    {
+        SPDLOG_DEBUG("{} not readable.", configPath.string());
+        return false;
     }
     // TODO: Validate config file.
     return true;
 }
+
+void requestTerm(int) { termRequested = true; }
 
 int main(int argc, char* argv[])
 {
@@ -70,7 +76,7 @@ int main(int argc, char* argv[])
     auto logArg = parser.add_argument("--log")
                       .help("log level {trace, debug, info, warning, error, critical, off}")
                       .choices("trace", "debug", "info", "warning", "error", "critical", "off");
-    parser.add_argument("--exe").help("path to sacnlogger executable").default_value("sacnlogger");
+    parser.add_argument("--exe").help("path to sacnlogger executable");
     try
     {
         parser.parse_args(argc, argv);
@@ -82,47 +88,72 @@ int main(int argc, char* argv[])
         return EXIT_FAILURE;
     }
 
-    // Set log level.
+    // Setup logging.
+    auto logger = spdlog::stdout_color_mt("monitor");
+    spdlog::set_default_logger(logger);
     if (parser.is_used("log"))
     {
         const auto loglevelName = parser.get<std::string>("log");
-        const auto spdlogLevel = [&loglevelName]() -> spdlog::level::level_enum
-        {
-            if (loglevelName == "trace")
-                return spdlog::level::trace;
-            else if (loglevelName == "debug")
-                return spdlog::level::debug;
-            else if (loglevelName == "info")
-                return spdlog::level::info;
-            else if (loglevelName == "warning")
-                return spdlog::level::warn;
-            else if (loglevelName == "error")
-                return spdlog::level::err;
-            else if (loglevelName == "critical")
-                return spdlog::level::critical;
-            else if (loglevelName == "off")
-                return spdlog::level::off;
-            throw std::logic_error("Unknown log level '" + loglevelName + "'");
-        }();
+        const auto spdlogLevel = spdlog::level::from_str(loglevelName);
         spdlog::set_level(spdlogLevel);
     }
+
+    // Setup signal handling.
+    std::signal(SIGTERM, &requestTerm);
+    std::signal(SIGINT, &requestTerm);
+#ifdef SIGQUIT
+    std::signal(SIGQUIT, &requestTerm);
+#endif
 
     // Wait for disk to be available.
     while (!diskAvailable())
     {
         std::this_thread::sleep_for(std::chrono::seconds(1));
     }
+    // Add monitor log on disk.
+    spdlog::default_logger()->sinks().emplace_back(
+        new spdlog::sinks::rotating_file_sink_mt("monitor.log", 5242880, 99));
     std::filesystem::current_path(kDiskDir);
-    const auto configPath = std::filesystem::path(kDiskDir) / kConfigFile;
+    const auto configPath = boost::filesystem::path(kDiskDir) / kConfigFile;
 
     // Run program.
-    const auto exePath = parser.get<std::string>("exe");
-    if (!std::filesystem::is_regular_file(exePath))
+    boost::filesystem::path exePath;
+    if (parser.is_used("exe"))
     {
-        spdlog::critical("Executable {} does not exist.", exePath);
+        exePath = parser.get<std::string>("exe");
+    }
+    else
+    {
+        exePath = boost::process::search_path("sacnlogger");
+    }
+    if (!boost::filesystem::is_regular_file(exePath))
+    {
+        SPDLOG_CRITICAL("Executable {} does not exist.", exePath.string());
         return EXIT_FAILURE;
     }
-    std::system(fmt::format("{} {}", exePath, configPath.string()).c_str());
+    SPDLOG_INFO("Starting executable");
+    exe = boost::process::child(exePath, configPath, boost::process::std_out > stdout, boost::process::std_err > stderr,
+                                boost::process::std_in < boost::process::null);
+    auto waiter = std::thread(
+        []()
+        {
+            while (!termRequested && exe.running())
+            {
+                std::this_thread::sleep_for(std::chrono::seconds(1));
+            }
+        });
+    waiter.join();
 
-    return EXIT_SUCCESS;
+    SPDLOG_INFO("Stopping executable");
+    if (exe.valid() && exe.running())
+    {
+        kill(exe.id(), SIGQUIT);
+        if (!exe.wait_for(std::chrono::seconds(10)))
+        {
+            kill(exe.id(), SIGKILL);
+        }
+    }
+    spdlog::shutdown();
+
+    return exe.exit_code();
 }

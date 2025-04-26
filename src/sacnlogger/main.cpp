@@ -25,6 +25,7 @@
 #include <fmt/ranges.h>
 #include <sacn/cpp/common.h>
 #include <spdlog/sinks/rotating_file_sink.h>
+#include <spdlog/sinks/stdout_color_sinks.h>
 #include <spdlog/spdlog.h>
 #include <thread>
 
@@ -64,6 +65,8 @@ int main(int argc, char* argv[])
     }
 
     // Setup logger.
+    auto logger = spdlog::stdout_color_mt("app");
+    spdlog::set_default_logger(logger);
     spdlog::default_logger()->sinks().emplace_back(new spdlog::sinks::rotating_file_sink_mt("app.log", 5242880, 99));
     SPDLOG_INFO("Starting sACN logger");
 

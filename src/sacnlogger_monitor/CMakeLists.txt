@@ -3,10 +3,14 @@ add_executable(sacnlogger_monitor
 )
 
 find_package(argparse CONFIG REQUIRED)
+# Current boost version in target Debian version (https://packages.debian.org/search?keywords=libboost-dev).
+find_package(Boost 1.74 CONFIG COMPONENTS filesystem REQUIRED)
 find_package(fmt CONFIG REQUIRED)
 find_package(spdlog CONFIG REQUIRED)
 target_link_libraries(sacnlogger_monitor PRIVATE
         argparse::argparse
+        Boost::boost
+        Boost::filesystem
         fmt::fmt
         spdlog::spdlog
 )
