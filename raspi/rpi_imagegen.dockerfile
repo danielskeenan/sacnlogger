@@ -55,7 +55,7 @@ RUN chmod +x /usr/bin/rpi_imagegen
 
 ENV USER=imagegen
 RUN /bin/bash -c 'echo "${USER} ALL=(ALL:ALL) NOPASSWD: ALL" > /etc/sudoers.d/nopasswd'
-RUN useradd -u 4000 -ms /bin/bash "$USER" && echo "${USER}:${USER}" | chpasswd && adduser ${USER} sudo # only add to sudo if build scripts require it
+RUN useradd -u 1000 -ms /bin/bash "$USER" && echo "${USER}:${USER}" | chpasswd && adduser ${USER} sudo # only add to sudo if build scripts require it
 USER ${USER}
 WORKDIR /home/${USER}
 

@@ -57,7 +57,6 @@ if (TARGET sacnlogger_monitor)
             DEPENDS main
     )
 endif ()
-message(STATUS "${CPACK_COMPONENTS_ALL}")
 
 add_custom_target(packages
         COMMAND "${CMAKE_CPACK_COMMAND}" -B "${CMAKE_CURRENT_BINARY_DIR}"

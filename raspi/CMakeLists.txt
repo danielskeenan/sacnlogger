@@ -1,50 +1,52 @@
 # Build happens in a Docker container.
 find_program(DOCKER_PROG docker REQUIRED)
 
-# Setup output directories.
-set(RASPI5_IMG_DIR "${CMAKE_CURRENT_BINARY_DIR}/deploy")
-file(MAKE_DIRECTORY "${RASPI5_IMG_DIR}")
-file(CHMOD "${RASPI5_IMG_DIR}" DIRECTORY_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_WRITE GROUP_EXECUTE WORLD_READ WORLD_WRITE WORLD_EXECUTE)
-set(RASPI5_IMG "${RASPI5_IMG_DIR}/${PROJECT_NAME}-${PROJECT_VERSION}-raspi5.img")
-
 # Build process depends on custom overlay, so mark it out of date if the overlay changes.
 file(GLOB_RECURSE OVERLAY_FILES LIST_DIRECTORIES false CONFIGURE_DEPENDS
         custom/*
-        docker-compose.yaml
-        Dockerfile
+        *.dockerfile
+        arm64-linux-gnu-crossbuild.cmake
+        build.options
         entrypoint.sh
 )
 
-# Build image.
-set(RASPI5_DEB "${CMAKE_CURRENT_BINARY_DIR}/cross-cmake-build/packages/${PROJECT_NAME}_${PROJECT_VERSION}_arm64.deb")
-add_custom_command(OUTPUT "${RASPI5_DEB}"
+# Build package.
+set(RASPI5_PKGS_DIR "${CMAKE_CURRENT_BINARY_DIR}/cross-cmake-build/packages")
+file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/cross-cmake-build")
+file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/cross-vcpkg-cache")
+set(RASPI5_DEB "${RASPI5_PKGS_DIR}/${PROJECT_NAME}-${PROJECT_VERSION}-Linux-main.deb")
+set(RASPI5_PKGS
+        "${RASPI5_DEB}"
+        "${RASPI5_PKGS_DIR}/${PROJECT_NAME}-${PROJECT_VERSION}-Linux-monitor.deb"
+)
+add_custom_command(OUTPUT ${RASPI5_PKGS}
         COMMAND ${CMAKE_COMMAND} -E env BUILDKIT_PROGRESS=plain "${DOCKER_PROG}" build
         --file "${PROJECT_SOURCE_DIR}/raspi/crossbuild_arm64.dockerfile"
         --tag sacnlogger_crossbuild_arm64:latest
         .
         COMMAND ${CMAKE_COMMAND} -E env BUILDKIT_PROGRESS=plain "${DOCKER_PROG}" run
-        --volume "${CMAKE_CURRENT_BINARY_DIR}/cross-cmake-build:/work/cmake-build"
-        --volume "${CMAKE_CURRENT_BINARY_DIR}/cross-vcpkg-cache:/root/.vcpkg-cache"
+        --volume "${CMAKE_CURRENT_BINARY_DIR}/cross-cmake-build:/home/crossbuild/work/cmake-build"
+        --volume "${CMAKE_CURRENT_BINARY_DIR}/cross-vcpkg-cache:/home/crossbuild/.vcpkg-cache"
         --rm
         sacnlogger_crossbuild_arm64:latest
         cmake -B "cmake-build" -S .
-        -DCMAKE_TOOLCHAIN_FILE=/root/.vcpkg/scripts/buildsystems/vcpkg.cmake
+        -DCMAKE_TOOLCHAIN_FILE=/home/crossbuild/.vcpkg/scripts/buildsystems/vcpkg.cmake
         -DVCPKG_TARGET_TRIPLET=arm64-linux-crossbuild
         -DCMAKE_BUILD_TYPE=$<CONFIG>
         -DBUILD_DOC=Off
         -DBUILD_TESTING=Off
         -DBUILD_PACKAGE=On
         COMMAND ${CMAKE_COMMAND} -E env BUILDKIT_PROGRESS=plain "${DOCKER_PROG}" run
-        --volume "${CMAKE_CURRENT_BINARY_DIR}/cross-cmake-build:/work/cmake-build"
-        --volume "${CMAKE_CURRENT_BINARY_DIR}/cross-vcpkg-cache:/root/.vcpkg-cache"
+        --volume "${CMAKE_CURRENT_BINARY_DIR}/cross-cmake-build:/home/crossbuild/work/cmake-build"
+        --volume "${CMAKE_CURRENT_BINARY_DIR}/cross-vcpkg-cache:/home/crossbuild/.vcpkg-cache"
         --rm
         sacnlogger_crossbuild_arm64:latest
         cmake --build "cmake-build" --config $<CONFIG>
         COMMAND ${CMAKE_COMMAND} -E env BUILDKIT_PROGRESS=plain "${DOCKER_PROG}" run
-        --volume "${CMAKE_CURRENT_BINARY_DIR}/cross-cmake-build:/work/cmake-build"
-        --volume "${CMAKE_CURRENT_BINARY_DIR}/cross-vcpkg-cache:/root/.vcpkg-cache"
+        --volume "${CMAKE_CURRENT_BINARY_DIR}/cross-cmake-build:/home/crossbuild/work/cmake-build"
+        --volume "${CMAKE_CURRENT_BINARY_DIR}/cross-vcpkg-cache:/home/crossbuild/.vcpkg-cache"
         --rm
-        --workdir /work/cmake-build
+        --workdir /home/crossbuild/work/cmake-build
         sacnlogger_crossbuild_arm64:latest
         cpack -B "./packages" -G DEB
         VERBATIM
@@ -52,7 +54,16 @@ add_custom_command(OUTPUT "${RASPI5_DEB}"
         USES_TERMINAL
         WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
 )
-add_custom_target(${PROJECT_NAME}_raspi5_deb DEPENDS "${RASPI5_DEB}")
+add_custom_target(${PROJECT_NAME}_raspi5_deb DEPENDS ${RASPI5_PKGS})
+
+# Build image.
+foreach (RASPI5_PKG IN LISTS RASPI5_PKGS)
+    cmake_path(GET RASPI5_PKG FILENAME RASPI5_PKG_FILENAME)
+    list(APPEND RASPI5_PKGS_VOLUMES "--volume" "${RASPI5_PKG}:/home/imagegen/custom/pkgs/${RASPI5_PKG_FILENAME}")
+endforeach ()
+set(RASPI5_IMG_DIR "${CMAKE_CURRENT_BINARY_DIR}/deploy")
+file(MAKE_DIRECTORY "${RASPI5_IMG_DIR}")
+set(RASPI5_IMG "${RASPI5_IMG_DIR}/${PROJECT_NAME}-${PROJECT_VERSION}-raspi5.img")
 add_custom_command(OUTPUT "${RASPI5_IMG}"
         COMMAND ${CMAKE_COMMAND} -E env BUILDKIT_PROGRESS=plain "${DOCKER_PROG}" build
         --file "${PROJECT_SOURCE_DIR}/raspi/rpi_imagegen.dockerfile"
@@ -60,14 +71,15 @@ add_custom_command(OUTPUT "${RASPI5_IMG}"
         .
         COMMAND ${CMAKE_COMMAND} -E env BUILDKIT_PROGRESS=plain "${DOCKER_PROG}" run
         --volume "${CMAKE_CURRENT_BINARY_DIR}/build_$<LOWER_CASE:$<CONFIG>>.options:/home/imagegen/build.options"
-        --volume "${RASPI5_DEB}:/home/imagegen/custom/pkgs/${PROJECT_NAME}_${PROJECT_VERSION}_arm64.deb"
+        ${RASPI5_PKGS_VOLUMES}
         --volume "${RASPI5_IMG_DIR}:/home/imagegen/work/deploy"
         --rm
         --privileged
         rpi_imagegen:latest
         -c sacnlogger$<IF:$<CONFIG:Debug>,_debug,_release> -o /home/imagegen/build.options
         VERBATIM
-        DEPENDS "${RASPI5_DEB}" ${OVERLAY_FILES}
+        COMMAND_EXPAND_LISTS
+        DEPENDS ${RASPI5_PKGS} ${OVERLAY_FILES}
         USES_TERMINAL
         WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
 )

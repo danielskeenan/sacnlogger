@@ -15,6 +15,7 @@ RUN dpkg --add-architecture arm64 &&\
     pkg-config \
     qemu-user \
     qemu-user-static \
+    sudo \
     uuid-dev:arm64 \
     wget \
     zip
@@ -26,12 +27,19 @@ RUN wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/nul
     rm /usr/share/keyrings/kitware-archive-keyring.gpg &&\
     apt-get install -y kitware-archive-keyring cmake
 
+# User setup.
+ENV USER=crossbuild
+RUN /bin/bash -c 'echo "${USER} ALL=(ALL:ALL) NOPASSWD: ALL" > /etc/sudoers.d/nopasswd'
+RUN useradd -u 1000 -ms /bin/bash "$USER" && echo "${USER}:${USER}" | chpasswd && adduser ${USER} sudo # only add to sudo if build scripts require it
+USER ${USER}
+WORKDIR /home/${USER}
+
 # Setup vcpkg.
 ENV VCPKG_DEFAULT_TRIPLET=arm64-linux
-ENV VCPKG_ROOT=/root/.vcpkg
+ENV VCPKG_ROOT=/home/${USER}/.vcpkg
 # VCPKG Caching (https://learn.microsoft.com/en-us/vcpkg/users/binarycaching)
-ENV VCPKG_DEFAULT_BINARY_CACHE=/root/.vcpkg-cache
-RUN mkdir ${VCPKG_DEFAULT_BINARY_CACHE}
+ENV VCPKG_DEFAULT_BINARY_CACHE=/home/${USER}/.vcpkg-cache
+RUN mkdir -p $VCPKG_DEFAULT_BINARY_CACHE
 RUN git clone https://github.com/microsoft/vcpkg.git ${VCPKG_ROOT} &&\
     cd ${VCPKG_ROOT} && \
     ./bootstrap-vcpkg.sh
@@ -46,13 +54,14 @@ ENV AS=/usr/bin/${CROSS_TRIPLE}-as \
     CXX=/usr/bin/${CROSS_TRIPLE}-g++ \
     LD=/usr/bin/${CROSS_TRIPLE}-ld \
     LD_LIBRARY_PATH=${CROSS_ROOT}/lib
-ENV VCPKG_OVERLAY_TRIPLETS=/root/triplets
-COPY raspi/arm64-linux-gnu-crossbuild.cmake /root/
+ENV VCPKG_OVERLAY_TRIPLETS=/home/${USER}/triplets
+COPY raspi/arm64-linux-gnu-crossbuild.cmake /home/${USER}/
 RUN mkdir ${VCPKG_OVERLAY_TRIPLETS} &&\
     cp ${VCPKG_ROOT}/triplets/community/arm64-linux.cmake ${VCPKG_OVERLAY_TRIPLETS}/arm64-linux-crossbuild.cmake &&\
-    echo "set(VCPKG_CHAINLOAD_TOOLCHAIN_FILE /root/arm64-linux-gnu-crossbuild.cmake)" >> "${VCPKG_OVERLAY_TRIPLETS}/arm64-linux-crossbuild.cmake"
+    echo "set(VCPKG_CHAINLOAD_TOOLCHAIN_FILE /home/${USER}/arm64-linux-gnu-crossbuild.cmake)" >> "${VCPKG_OVERLAY_TRIPLETS}/arm64-linux-crossbuild.cmake"
 
-COPY . /work/
-WORKDIR /work
+RUN git config --global --add safe.directory /home/${USER}/work
+COPY . /home/${USER}/work/
+WORKDIR /home/${USER}/work
 
 CMD ["sh"]
