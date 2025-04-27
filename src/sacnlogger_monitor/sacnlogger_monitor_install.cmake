@@ -3,7 +3,7 @@ set(CPACK_DEBIAN_MONITOR_PACKAGE_NAME "sacnlogger-monitor")
 set(CPACK_RPM_MONITOR_PACKAGE_NAME "sacnlogger-monitor")
 set(CPACK_DEBIAN_MONITOR_FILE_NAME "DEB-DEFAULT")
 set(CPACK_RPM_MONITOR_FILE_NAME "RPM-DEFAULT")
-set(CPACK_DEBIAN_MONITOR_PACKAGE_DEPENDS "libc6 (>= 2.36), libstdc++6, libboost-filesystem1.74.0")
+set(CPACK_DEBIAN_MONITOR_PACKAGE_DEPENDS "libc6 (>= 2.36), libstdc++6, libboost-filesystem1.81.0")
 set(CPACK_DEBIAN_MONITOR_PACKAGE_SECTION "net")
 
 # Need extra scripts to make systemd service behave properly.
