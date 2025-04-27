@@ -21,8 +21,8 @@
 
 #include <argparse/argparse.hpp>
 #include <boost/asio/io_context.hpp>
-#include <boost/process/v2/process.hpp>
 #include <boost/process/v2/environment.hpp>
+#include <boost/process/v2/process.hpp>
 #include <filesystem>
 #include <fmt/format.h>
 #include <fstream>
@@ -66,6 +66,8 @@ bool diskAvailable()
 
 void requestTerm(int) { termRequested = true; }
 
+void cleanup() { spdlog::shutdown(); }
+
 int main(int argc, char* argv[])
 {
     // Arguments
@@ -107,6 +109,11 @@ int main(int argc, char* argv[])
     // Wait for disk to be available.
     while (!diskAvailable())
     {
+        if (termRequested)
+        {
+            cleanup();
+            return EXIT_SUCCESS;
+        }
         std::this_thread::sleep_for(std::chrono::seconds(1));
     }
     // Add monitor log on disk.
@@ -149,7 +156,7 @@ int main(int argc, char* argv[])
         exe.request_exit();
         exe.wait();
     }
-    spdlog::shutdown();
+    cleanup();
 
     return exe.exit_code();
 }

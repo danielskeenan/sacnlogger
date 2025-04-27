@@ -50,7 +50,7 @@ add_custom_command(OUTPUT ${RASPI5_PKGS}
         sacnlogger_crossbuild_arm64:latest
         cpack -B "./packages" -G DEB
         VERBATIM
-        DEPENDS ${PROJECT_NAME}
+        DEPENDS sacnlogger_monitor ${PROJECT_NAME}
         USES_TERMINAL
         WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
 )
