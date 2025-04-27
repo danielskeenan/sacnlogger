@@ -1,0 +1,5 @@
+image filesystem.squashfs {
+   squashfs {
+   }
+   mountpoint = "/"
+}

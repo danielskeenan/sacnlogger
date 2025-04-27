@@ -1,0 +1,7 @@
+---
+name: Required packages.
+mmdebstrap:
+  packages:
+    - initramfs-tools
+    - ncurses-base
+    - tzdata

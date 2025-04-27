@@ -1,6 +1,6 @@
-debian/bookworm/arm64/base-apt
-tzdata
+debian/bookworm/arm64/base-slim
 rpi/debian/bookworm/apt
+base
 rpi/misc-utils
 rpi/base/essential
 rpi/boot-firmware

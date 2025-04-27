@@ -1,0 +1,7 @@
+---
+name: Setup read-only FS
+mmdebstrap:
+#  packages:
+#    - overlayroot
+#  customize-hooks:
+#    - echo overlayroot=\"tmpfs:recurse=0,debug=1\" > $1/etc/overlayroot.local.conf
