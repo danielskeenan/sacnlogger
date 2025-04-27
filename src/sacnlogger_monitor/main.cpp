@@ -20,12 +20,12 @@
  */
 
 #include <argparse/argparse.hpp>
-#include <boost/process/child.hpp>
-#include <boost/process/io.hpp>
-#include <boost/process/search_path.hpp>
-#include <csignal>
+#include <boost/asio/io_context.hpp>
+#include <boost/process/v2/process.hpp>
+#include <boost/process/v2/environment.hpp>
 #include <filesystem>
 #include <fmt/format.h>
+#include <fstream>
 #include <iostream>
 #include <spdlog/sinks/rotating_file_sink.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
@@ -37,7 +37,6 @@ static constexpr auto kDiskDir = "/media/sacnlogger/disk";
 static constexpr auto kConfigFile = "config.yaml";
 
 bool termRequested = false;
-static boost::process::child exe;
 
 bool diskAvailable()
 {
@@ -114,7 +113,7 @@ int main(int argc, char* argv[])
     spdlog::default_logger()->sinks().emplace_back(
         new spdlog::sinks::rotating_file_sink_mt("monitor.log", 5242880, 99));
     std::filesystem::current_path(kDiskDir);
-    const auto configPath = boost::filesystem::path(kDiskDir) / kConfigFile;
+    const auto configPath = std::filesystem::path(kDiskDir) / kConfigFile;
 
     // Run program.
     boost::filesystem::path exePath;
@@ -124,7 +123,7 @@ int main(int argc, char* argv[])
     }
     else
     {
-        exePath = boost::process::search_path("sacnlogger");
+        exePath = boost::process::v2::environment::find_executable("sacnlogger");
     }
     if (!boost::filesystem::is_regular_file(exePath))
     {
@@ -132,10 +131,10 @@ int main(int argc, char* argv[])
         return EXIT_FAILURE;
     }
     SPDLOG_INFO("Starting executable");
-    exe = boost::process::child(exePath, configPath, boost::process::std_out > stdout, boost::process::std_err > stderr,
-                                boost::process::std_in < boost::process::null);
+    boost::asio::io_context ioCtx;
+    boost::process::v2::process exe(ioCtx, exePath, {configPath.string()});
     auto waiter = std::thread(
-        []()
+        [&exe]()
         {
             while (!termRequested && exe.running())
             {
@@ -145,13 +144,10 @@ int main(int argc, char* argv[])
     waiter.join();
 
     SPDLOG_INFO("Stopping executable");
-    if (exe.valid() && exe.running())
+    if (exe.running())
     {
-        kill(exe.id(), SIGQUIT);
-        if (!exe.wait_for(std::chrono::seconds(10)))
-        {
-            kill(exe.id(), SIGKILL);
-        }
+        exe.request_exit();
+        exe.wait();
     }
     spdlog::shutdown();
 

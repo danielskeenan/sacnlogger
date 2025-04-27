@@ -18,8 +18,8 @@ RUN dpkg --add-architecture arm64 &&\
     sudo \
     wget \
     zip \
-    libboost-dev:arm64 \
-    libboost-filesystem-dev:arm64 \
+    libboost1.81-dev:arm64 \
+    libboost-filesystem1.81-dev:arm64 \
     uuid-dev:arm64
 
 # Get a newer cmake than the one in the repo.

@@ -39,7 +39,7 @@ jobs:
         if: ${{runner.os == 'Linux'}}
         run: |
           sudo apt-get update
-          sudo apt-get -y install libboost-filesystem-dev ninja-build uuid-dev
+          sudo apt-get -y install libboost1.81-dev libboost-filesystem1.81-dev ninja-build uuid-dev
 
       - name: Install system deps (macOS)
         if: ${{runner.os == 'macOS'}}
