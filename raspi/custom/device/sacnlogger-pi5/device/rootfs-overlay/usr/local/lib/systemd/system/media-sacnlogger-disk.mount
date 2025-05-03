@@ -1,0 +1,9 @@
+[Unit]
+Description=sacnlogger disk
+
+[Mount]
+What=/dev/sacnlogger-disk
+Where=/media/sacnlogger/disk
+Options=uid=1000,gid=1000,noatime,sync
+SloppyOptions=true
+ReadWriteOnly=true

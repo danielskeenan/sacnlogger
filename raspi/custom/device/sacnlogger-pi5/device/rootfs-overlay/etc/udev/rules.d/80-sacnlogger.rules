@@ -1,2 +1,2 @@
 # Mount the first USB drive at /media/sacnlogger/disk.
-ACTION=="add", SUBSYSTEMS=="usb", SUBSYSTEM=="block", ENV{ID_FS_USAGE}=="filesystem", SYMLINK+="sacnlogger-disk", RUN{program}+="/usr/bin/systemd-mount --no-block --automount=yes --owner=sacnlogger --options=noatime,sync --collect $devnode /media/sacnlogger/disk"
+ACTION=="add", SUBSYSTEMS=="usb", SUBSYSTEM=="block", ENV{ID_FS_USAGE}=="filesystem", SYMLINK+="sacnlogger-disk", TAG+="systemd", ENV{SYSTEMD_WANTS}="sacnlogger.service"

@@ -11,7 +11,6 @@ set(CPACK_STRIP_FILES On)
 
 set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE.txt")
 if (CMAKE_SYSTEM_NAME STREQUAL "Linux")
-    # TODO: Find a way to stop generating the "Unspecified" packages.
     set(CPACK_GENERATOR "TGZ;DEB;RPM")
     set(CPACK_DEBIAN_PACKAGE_NAME "${PROJECT_NAME}")
     set(CPACK_MONOLITHIC_INSTALL OFF)
@@ -32,7 +31,6 @@ if (CMAKE_SYSTEM_NAME STREQUAL "Linux")
     endif ()
 
     include(${PROJECT_SOURCE_DIR}/src/sacnlogger/sacnlogger_install.cmake)
-    include(${PROJECT_SOURCE_DIR}/src/sacnlogger_monitor/sacnlogger_monitor_install.cmake)
 elseif (CMAKE_SYSTEM_NAME STREQUAL "Windows")
     set(CPACK_GENERATOR "ZIP")
     set(CPACK_PACKAGE_INSTALL_DIRECTORY "${PROJECT_DISPLAY_NAME}")
@@ -52,13 +50,6 @@ if (TARGET ${PROJECT_NAME})
             DISPLAY_NAME Logger
             DESCRIPTION sacnlogger program
             REQUIRED
-    )
-endif ()
-if (TARGET sacnlogger_monitor)
-    cpack_add_component(monitor
-            DISPLAY_NAME Monitor
-            DESCRIPTION Launch sacnlogger for remote unattended use.
-            DEPENDS main
     )
 endif ()
 

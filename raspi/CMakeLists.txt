@@ -17,7 +17,6 @@ file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/cross-vcpkg-cache")
 set(RASPI5_DEB "${RASPI5_PKGS_DIR}/${PROJECT_NAME}_${PROJECT_VERSION}_arm64.deb")
 set(RASPI5_PKGS
         "${RASPI5_DEB}"
-        "${RASPI5_PKGS_DIR}/${PROJECT_NAME}-monitor_${PROJECT_VERSION}_arm64.deb"
 )
 add_custom_command(OUTPUT ${RASPI5_PKGS}
         COMMAND ${CMAKE_COMMAND} -E env BUILDKIT_PROGRESS=plain "${DOCKER_PROG}" build
@@ -50,7 +49,7 @@ add_custom_command(OUTPUT ${RASPI5_PKGS}
         sacnlogger_crossbuild_arm64:latest
         cpack -B "./packages" -G DEB
         VERBATIM
-        DEPENDS sacnlogger_monitor ${PROJECT_NAME}
+        DEPENDS ${PROJECT_NAME}
         USES_TERMINAL
         WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
 )
