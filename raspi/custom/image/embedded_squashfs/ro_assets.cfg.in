@@ -1,5 +1,6 @@
 image filesystem.squashfs {
    squashfs {
+   compression = "zstd"
    }
    mountpoint = "/"
 }
