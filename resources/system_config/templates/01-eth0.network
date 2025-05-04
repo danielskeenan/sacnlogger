@@ -1,0 +1,22 @@
+[Match]
+Name=eth0
+
+[Network]
+DHCP={% if network.dhcp %}yes{% else %}no{% endif %}
+{%- if not network.dhcp and network.ntp -%}
+NTP={{ network.ntpServer }}
+{%- endif %}
+
+{% if network.dhcp -%}
+[DHCPv4]
+RoutesToDNS=false
+RoutesToNTP=false
+{%- if network.ntp -%}
+UseNTP=true
+{%- endif -%}
+{%- else -%}
+[Address]
+Address={{ network.address }}/{{ network.prefixLength }}
+[Route]
+Gateway={{ network.gateway }}
+{%- endif -%}

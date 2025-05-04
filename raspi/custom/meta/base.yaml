@@ -2,6 +2,7 @@
 name: Required packages.
 mmdebstrap:
   packages:
+    - dbus
     - initramfs-tools
     - ncurses-base
     - tzdata

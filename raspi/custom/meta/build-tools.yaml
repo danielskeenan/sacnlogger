@@ -4,6 +4,7 @@ mmdebstrap:
   mirrors:
     - deb https://apt.kitware.com/ubuntu/ jammy main
   packages:
+    - apt
     - build-essential
     - cmake
     - curl
@@ -18,6 +19,7 @@ mmdebstrap:
     - unzip
     - zip
     # Build dependencies
+    - libsdbus-c++-dev
     - uuid-dev
   setup-hooks:
     - mkdir -p $1/usr/share/keyrings

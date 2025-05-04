@@ -36,6 +36,8 @@ namespace sacnlogger::config {
     constexpr auto kProjectOrganizationName = "${PROJECT_ORGANIZATION_NAME}";
     constexpr auto kProjectOrganizationDomain = "${PROJECT_ORGANIZATION_DOMAIN}";
     constexpr auto kProjectAuthor = "${PROJECT_AUTHOR}";
+
+    constexpr auto kDefaultShareDir = "${SHARE_DIR}";
 } // namespace sacnlogger::config
 
 #endif //SACNLOGGER_CONFIG_H

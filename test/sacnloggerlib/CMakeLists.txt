@@ -1,12 +1,26 @@
 add_executable(sacnloggerlib_test
+        main.cpp
         AbbreviationMapTest.cpp
         ConfigTest.cpp
         CsvRowTest.cpp
+        FileMatcher.h
 )
+
+if (EMBEDDED_BUILD)
+    target_sources(sacnloggerlib_test PRIVATE
+            SystemConfigTest.cpp
+    )
+endif ()
+
 find_package(Catch2 3 REQUIRED)
 find_package(fmt CONFIG REQUIRED)
-target_link_libraries(sacnloggerlib_test PRIVATE Catch2::Catch2WithMain fmt::fmt sacnloggerlib)
-target_compile_definitions(sacnloggerlib_test PRIVATE "RESOURCES_PATH=\"${CMAKE_CURRENT_SOURCE_DIR}/resources\"")
+target_link_libraries(sacnloggerlib_test PRIVATE Catch2::Catch2 fmt::fmt sacnloggerlib)
+target_compile_definitions(sacnloggerlib_test PRIVATE
+        "RESOURCES_PATH=\"${CMAKE_CURRENT_SOURCE_DIR}/resources\""
+        "SACNLOGGER_SHAREDIR=\"${CMAKE_INSTALL_PREFIX}/share/sacnlogger\""
+        "SACNLOGGER_SYS_PREFIX=\"${CMAKE_CURRENT_BINARY_DIR}/prefix\""
+)
+file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/prefix")
 
 include(CTest)
 include(Catch)

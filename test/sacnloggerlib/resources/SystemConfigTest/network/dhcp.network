@@ -1,0 +1,10 @@
+[Match]
+Name=eth0
+
+[Network]
+DHCP=yes
+
+
+[DHCPv4]
+RoutesToDNS=false
+RoutesToNTP=false

@@ -17,5 +17,11 @@
   }, {
     "name" : "date",
     "version>=" : "3.0.3"
+  }, {
+    "name" : "inja",
+    "version>=" : "3.4.0"
+  }, {
+    "name" : "boost-dll",
+    "version>=" : "1.88.0"
   } ]
 }

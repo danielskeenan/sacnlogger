@@ -32,6 +32,7 @@ add_custom_command(OUTPUT ${RASPI5_PKGS}
         -DCMAKE_TOOLCHAIN_FILE=/home/crossbuild/.vcpkg/scripts/buildsystems/vcpkg.cmake
         -DVCPKG_TARGET_TRIPLET=arm64-linux-crossbuild
         -DCMAKE_BUILD_TYPE=$<CONFIG>
+        -DEMBEDDED_BUILD=On
         -DBUILD_DOC=Off
         -DBUILD_TESTING=Off
         -DBUILD_PACKAGE=On

@@ -18,6 +18,7 @@ RUN dpkg --add-architecture arm64 &&\
     sudo \
     wget \
     zip \
+    libsdbus-c++-dev:arm64 \
     uuid-dev:arm64
 
 # Get a newer cmake than the one in the repo.

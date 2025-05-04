@@ -30,7 +30,17 @@ set(CMAKE_CXX_STANDARD 20)
 
 option(BUILD_EXEC "Build the executable program.  You probably want to do this." ON)
 if (BUILD_EXEC)
+    option(EMBEDDED_BUILD "Include features for running the program as part of an appliance." OFF)
+
+    # Platform detection.
+    string(TOUPPER "PLATFORM_${CMAKE_SYSTEM_NAME}" PLATFORM_DEFINITION)
+    add_compile_definitions("${PLATFORM_DEFINITION}")
+
     include_directories("${PROJECT_SOURCE_DIR}/include" "${PROJECT_BINARY_DIR}/include")
+
+    # Shared files directory, relative to binary directory.
+    include(GNUInstallDirs)
+    set(SHARE_DIR "../${CMAKE_INSTALL_DATADIR}/sacnlogger")
 
     add_subdirectory(src)
 
