@@ -61,7 +61,7 @@ WORKDIR /home/${USER}
 
 RUN mkdir -p /home/${USER}/work/deploy
 
-ARG RPIIG_GIT_SHA=ba410bccd3f690a49cb8ec7a724cb59d08a4257e
+ARG RPIIG_GIT_SHA=6237c061b077621d58087d7e80dee38eab4fadf9
 RUN git clone --no-checkout https://github.com/raspberrypi/rpi-image-gen.git && cd rpi-image-gen && git checkout ${RPIIG_GIT_SHA}
 
 COPY raspi/custom /home/imagegen/custom

@@ -28,5 +28,6 @@ cat main.cfg.in | sed \
    -e "s|<IMAGE_SUFFIX>|$IGconf_image_suffix|g" \
    -e "s|<FW_SIZE>|$FW_SIZE|g" \
    -e "s|<ROOT_SIZE>|$ROOT_SIZE|g" \
+   -e "s|<SECTOR_SIZE>|$IGconf_device_sector_size|g" \
    -e "s|<EMBED_HOOK>|$WRITER|g" \
    > ${genimg_in}/genimage02.cfg

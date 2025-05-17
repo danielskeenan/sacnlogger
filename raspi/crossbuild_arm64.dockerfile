@@ -18,7 +18,7 @@ RUN dpkg --add-architecture arm64 &&\
     sudo \
     wget \
     zip \
-    libsdbus-c++-dev:arm64 \
+    libsystemd-dev:arm64 \
     uuid-dev:arm64
 
 # Get a newer cmake than the one in the repo.
@@ -54,7 +54,8 @@ ENV AS=/usr/bin/${CROSS_TRIPLE}-as \
     CPP=/usr/bin/${CROSS_TRIPLE}-cpp \
     CXX=/usr/bin/${CROSS_TRIPLE}-g++ \
     LD=/usr/bin/${CROSS_TRIPLE}-ld \
-    LD_LIBRARY_PATH=${CROSS_ROOT}/lib
+    LD_LIBRARY_PATH=${CROSS_ROOT}/lib \
+    PKG_CONFIG_PATH=/usr/lib/${CROSS_TRIPLE}/pkgconfig
 ENV VCPKG_OVERLAY_TRIPLETS=/home/${USER}/triplets
 COPY raspi/arm64-linux-gnu-crossbuild.cmake /home/${USER}/
 RUN mkdir ${VCPKG_OVERLAY_TRIPLETS} &&\
