@@ -27,6 +27,11 @@
 #include <nlohmann/json_fwd.hpp>
 #include "AddressOrHostname.h"
 
+namespace sdbus
+{
+    class IConnection;
+}
+
 namespace sacnlogger
 {
     namespace detail
@@ -55,12 +60,23 @@ namespace sacnlogger
     class SystemConfig
     {
     public:
+        /**
+         *
+         * @param dbus A custom dbus connection to use (usually for testing). Defaults to the system bus.
+         */
+        explicit SystemConfig(sdbus::IConnection* dbus = nullptr);
+        ~SystemConfig();
+
         detail::NetworkConfig networkConfig;
 
         void readFromSystem();
         void writeToSystem();
 
     private:
+        // Allow testing with a fake dbus connection.
+        sdbus::IConnection* dbus_;
+        bool isSystemBus_;
+
         /**
          * Path to file templates.
          */

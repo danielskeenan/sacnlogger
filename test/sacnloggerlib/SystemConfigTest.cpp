@@ -22,7 +22,28 @@
 #include <catch2/catch_test_macros.hpp>
 #include <fstream>
 #include <sacnloggerlib/SystemConfig.h>
+#include <sdbus-c++/sdbus-c++.h>
+#include <thread>
 #include "FileMatcher.h"
+
+class ReturnFileContents
+{
+public:
+    explicit ReturnFileContents(const std::string& path) : path_(path) {}
+
+    std::string operator()() const
+    {
+        std::ifstream file(path_);
+        if (!file.is_open())
+        {
+            throw std::runtime_error("Failed to open file");
+        }
+        return {std::istreambuf_iterator(file), {}};
+    }
+
+private:
+    std::string path_;
+};
 
 TEST_CASE("Network Write")
 {
@@ -82,6 +103,123 @@ TEST_CASE("Network Write")
 
 TEST_CASE("Network Read")
 {
-    sacnlogger::SystemConfig systemConfig;
-    systemConfig.readFromSystem();
+    // Need a fake DBus. See
+    // https://github.com/Kistler-Group/sdbus-cpp/blob/master/docs/using-sdbus-c%2B%2B.md#using-direct-peer-to-peer-d-bus-connections
+    std::array<int, 2> fds{};
+    socketpair(AF_UNIX, SOCK_STREAM, 0, fds.data());
+    std::unique_ptr<sdbus::IConnection> serverConnection;
+    std::unique_ptr<sdbus::IConnection> clientConnection;
+    std::thread t(
+        [&]()
+        {
+            serverConnection = sdbus::createServerBus(fds[0]);
+            // This is necessary so that createDirectBusConnection() below does not block
+            serverConnection->enterEventLoopAsync();
+        });
+    clientConnection = sdbus::createDirectBusConnection(fds[1]);
+    clientConnection->enterEventLoopAsync();
+    t.join();
+
+    // Mock requests for interfaces.
+    const sdbus::ServiceName networkdService{"org.freedesktop.network1"};
+    const sdbus::InterfaceName linkInterface{"org.freedesktop.network1.Link"};
+    const sdbus::MethodName describeMethod{"Describe"};
+    const sdbus::ObjectPath loObjectPath{"/org/freedesktop/network1/link/_31"};
+    const sdbus::ObjectPath eth0ObjectPath{"/org/freedesktop/network1/link/_32"};
+    auto networkdManager = sdbus::createObject(*serverConnection, sdbus::ObjectPath{"/org/freedesktop/network1"});
+    auto listLinks = [&]()
+    {
+        return std::vector<sdbus::Struct<int32_t, std::string, sdbus::ObjectPath>>{
+            {2, "eth0", eth0ObjectPath},
+            {1, "lo", loObjectPath},
+        };
+    };
+    networkdManager->addVTable(sdbus::registerMethod("ListLinks").implementedAs(std::move(listLinks)))
+        .forInterface("org.freedesktop.network1.Manager");
+    auto loObject = sdbus::createObject(*serverConnection, loObjectPath);
+    loObject
+        ->addVTable(sdbus::registerMethod(describeMethod)
+                        .implementedAs(ReturnFileContents(RESOURCES_PATH "/SystemConfigTest/network/lo.json")))
+        .forInterface(linkInterface);
+    auto eth0Object = sdbus::createObject(*serverConnection, eth0ObjectPath);
+
+    sacnlogger::SystemConfig systemConfig(clientConnection.get());
+    SECTION("DHCP")
+    {
+        SECTION("Without NTP")
+        {
+            eth0Object
+                ->addVTable(
+                    sdbus::registerMethod(describeMethod)
+                        .implementedAs(ReturnFileContents(RESOURCES_PATH "/SystemConfigTest/network/dhcp.json")))
+                .forInterface(linkInterface);
+
+            systemConfig.readFromSystem();
+            CHECK(systemConfig.networkConfig.ntp == false);
+            CHECK(systemConfig.networkConfig.ntpServer == sacnlogger::AddressOrHostname{});
+        }
+        SECTION("With NTP from DHCP")
+        {
+            eth0Object
+                ->addVTable(
+                    sdbus::registerMethod(describeMethod)
+                        .implementedAs(ReturnFileContents(RESOURCES_PATH "/SystemConfigTest/network/dhcp-ntp.json")))
+                .forInterface(linkInterface);
+
+            systemConfig.readFromSystem();
+            CHECK(systemConfig.networkConfig.ntp == true);
+            CHECK(systemConfig.networkConfig.ntpServer == sacnlogger::AddressOrHostname("192.168.3.101"));
+        }
+        SECTION("With NTP from static")
+        {
+            eth0Object
+                ->addVTable(sdbus::registerMethod(describeMethod)
+                                .implementedAs(
+                                    ReturnFileContents(RESOURCES_PATH "/SystemConfigTest/network/dhcp-ntpstatic.json")))
+                .forInterface(linkInterface);
+
+            systemConfig.readFromSystem();
+            CHECK(systemConfig.networkConfig.ntp == true);
+            CHECK(systemConfig.networkConfig.ntpServer == sacnlogger::AddressOrHostname("us.pool.ntp.org"));
+        }
+        CHECK(systemConfig.networkConfig.dhcp == true);
+        CHECK(systemConfig.networkConfig.address == etcpal::IpAddr::FromString("192.168.1.204"));
+        CHECK(systemConfig.networkConfig.mask == etcpal::IpAddr::FromString("255.255.0.0"));
+        CHECK(systemConfig.networkConfig.gateway == etcpal::IpAddr::FromString("192.168.1.1"));
+    }
+
+    SECTION("Static")
+    {
+        SECTION("Without NTP")
+        {
+            eth0Object
+                ->addVTable(
+                    sdbus::registerMethod(describeMethod)
+                        .implementedAs(ReturnFileContents(RESOURCES_PATH "/SystemConfigTest/network/static.json")))
+                .forInterface(linkInterface);
+
+            systemConfig.readFromSystem();
+            CHECK(systemConfig.networkConfig.ntp == false);
+            CHECK(systemConfig.networkConfig.ntpServer == sacnlogger::AddressOrHostname{});
+        }
+        SECTION("With NTP")
+        {
+            eth0Object
+                ->addVTable(sdbus::registerMethod(describeMethod)
+                                .implementedAs(
+                                    ReturnFileContents(RESOURCES_PATH "/SystemConfigTest/network/static-ntp.json")))
+                .forInterface(linkInterface);
+
+            systemConfig.readFromSystem();
+            CHECK(systemConfig.networkConfig.ntp == true);
+            CHECK(systemConfig.networkConfig.ntpServer == sacnlogger::AddressOrHostname("us.pool.ntp.org"));
+        }
+        CHECK(systemConfig.networkConfig.dhcp == false);
+        CHECK(systemConfig.networkConfig.address == etcpal::IpAddr::FromString("192.168.1.204"));
+        CHECK(systemConfig.networkConfig.mask == etcpal::IpAddr::FromString("255.255.0.0"));
+        CHECK(systemConfig.networkConfig.gateway == etcpal::IpAddr::FromString("192.168.1.1"));
+    }
+
+    clientConnection->leaveEventLoop();
+    serverConnection->leaveEventLoop();
 }

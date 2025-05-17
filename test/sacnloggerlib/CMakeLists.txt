@@ -7,8 +7,12 @@ add_executable(sacnloggerlib_test
 )
 
 if (EMBEDDED_BUILD)
+    include(sdbus-cpp)
     target_sources(sacnloggerlib_test PRIVATE
             SystemConfigTest.cpp
+    )
+    target_link_libraries(sacnloggerlib_test PRIVATE
+            sdbus-c++
     )
 endif ()
 

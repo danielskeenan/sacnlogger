@@ -80,6 +80,29 @@ namespace sacnlogger
         }
     } // namespace detail
 
+    SystemConfig::SystemConfig(sdbus::IConnection* dbus)
+    {
+        if (dbus == nullptr)
+        {
+            // Deleted in destructor.
+            dbus_ = sdbus::createSystemBusConnection().release();
+            isSystemBus_ = true;
+        }
+        else
+        {
+            dbus_ = dbus;
+            isSystemBus_ = false;
+        }
+    }
+
+    SystemConfig::~SystemConfig()
+    {
+        if (isSystemBus_)
+        {
+            delete dbus_;
+        }
+    }
+
     void SystemConfig::readFromSystem()
     {
         // Network.
@@ -90,7 +113,8 @@ namespace sacnlogger
         sdbus::ObjectPath eth0ObjectPath;
         {
             std::vector<sdbus::Struct<int32_t, std::string, sdbus::ObjectPath>> ifaces;
-            auto networkdManager = sdbus::createProxy(networkdService, sdbus::ObjectPath{"/org/freedesktop/network1"});
+            auto networkdManager =
+                sdbus::createProxy(*dbus_, networkdService, sdbus::ObjectPath{"/org/freedesktop/network1"});
             networkdManager->callMethod("ListLinks")
                 .onInterface("org.freedesktop.network1.Manager")
                 .storeResultsTo(ifaces);
@@ -114,7 +138,7 @@ namespace sacnlogger
         nlohmann::json eth0Info;
         {
             std::string eth0Json;
-            auto eth0Link = sdbus::createProxy(networkdService, eth0ObjectPath);
+            auto eth0Link = sdbus::createProxy(*dbus_, networkdService, eth0ObjectPath);
             eth0Link->callMethod("Describe").onInterface("org.freedesktop.network1.Link").storeResultsTo(eth0Json);
             eth0Info = nlohmann::json::parse(eth0Json);
         }
@@ -183,6 +207,11 @@ namespace sacnlogger
                 // Hostname.
                 newNetworkConfig.ntpServer = server.value();
             }
+        }
+        else
+        {
+            newNetworkConfig.ntp = false;
+            newNetworkConfig.ntpServer = AddressOrHostname{};
         }
 
         networkConfig = newNetworkConfig;

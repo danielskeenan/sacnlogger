@@ -1,0 +1,193 @@
+{
+  "Index": 1,
+  "Name": "lo",
+  "Type": "loopback",
+  "Flags": 65609,
+  "FlagsString": "up,loopback,running,lower-up",
+  "KernelOperationalState": 0,
+  "KernelOperationalStateString": "unknown",
+  "MTU": 65536,
+  "MinimumMTU": 0,
+  "MaximumMTU": 4294967295,
+  "AdministrativeState": "unmanaged",
+  "OperationalState": "carrier",
+  "CarrierState": "carrier",
+  "AddressState": "off",
+  "IPv4AddressState": "off",
+  "IPv6AddressState": "off",
+  "OnlineState": null,
+  "Addresses": [
+    {
+      "Family": 10,
+      "Address": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1
+      ],
+      "PrefixLength": 128,
+      "Scope": 254,
+      "ScopeString": "host",
+      "Flags": 640,
+      "FlagsString": "permanent,no-prefixroute",
+      "ConfigSource": "foreign",
+      "ConfigState": "configured"
+    },
+    {
+      "Family": 2,
+      "Address": [
+        127,
+        0,
+        0,
+        1
+      ],
+      "PrefixLength": 8,
+      "Scope": 254,
+      "ScopeString": "host",
+      "Flags": 128,
+      "FlagsString": "permanent",
+      "ConfigSource": "foreign",
+      "ConfigState": "configured"
+    }
+  ],
+  "Routes": [
+    {
+      "Family": 2,
+      "Destination": [
+        127,
+        0,
+        0,
+        0
+      ],
+      "DestinationPrefixLength": 8,
+      "PreferredSource": [
+        127,
+        0,
+        0,
+        1
+      ],
+      "Scope": 254,
+      "ScopeString": "host",
+      "Protocol": 2,
+      "ProtocolString": "kernel",
+      "Type": 2,
+      "TypeString": "local",
+      "Priority": 0,
+      "Table": 255,
+      "TableString": "local(255)",
+      "Preference": 0,
+      "Flags": 0,
+      "FlagsString": "",
+      "ConfigSource": "foreign",
+      "ConfigState": "configured"
+    },
+    {
+      "Family": 2,
+      "Destination": [
+        127,
+        255,
+        255,
+        255
+      ],
+      "DestinationPrefixLength": 32,
+      "PreferredSource": [
+        127,
+        0,
+        0,
+        1
+      ],
+      "Scope": 253,
+      "ScopeString": "link",
+      "Protocol": 2,
+      "ProtocolString": "kernel",
+      "Type": 3,
+      "TypeString": "broadcast",
+      "Priority": 0,
+      "Table": 255,
+      "TableString": "local(255)",
+      "Preference": 0,
+      "Flags": 0,
+      "FlagsString": "",
+      "ConfigSource": "foreign",
+      "ConfigState": "configured"
+    },
+    {
+      "Family": 2,
+      "Destination": [
+        127,
+        0,
+        0,
+        1
+      ],
+      "DestinationPrefixLength": 32,
+      "PreferredSource": [
+        127,
+        0,
+        0,
+        1
+      ],
+      "Scope": 254,
+      "ScopeString": "host",
+      "Protocol": 2,
+      "ProtocolString": "kernel",
+      "Type": 2,
+      "TypeString": "local",
+      "Priority": 0,
+      "Table": 255,
+      "TableString": "local(255)",
+      "Preference": 0,
+      "Flags": 0,
+      "FlagsString": "",
+      "ConfigSource": "foreign",
+      "ConfigState": "configured"
+    },
+    {
+      "Family": 10,
+      "Destination": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1
+      ],
+      "DestinationPrefixLength": 128,
+      "Scope": 0,
+      "ScopeString": "global",
+      "Protocol": 2,
+      "ProtocolString": "kernel",
+      "Type": 2,
+      "TypeString": "local",
+      "Priority": 0,
+      "Table": 255,
+      "TableString": "local(255)",
+      "Preference": 0,
+      "Flags": 0,
+      "FlagsString": "",
+      "ConfigSource": "foreign",
+      "ConfigState": "configured"
+    }
+  ]
+}
