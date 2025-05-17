@@ -33,16 +33,21 @@ namespace sacnlogger
     {
         struct NetworkConfig
         {
-            bool dhcp = false;
+            bool dhcp = true;
             etcpal::IpAddr address;
             etcpal::IpAddr mask;
             etcpal::IpAddr gateway;
-            bool ntp = false;
+            bool ntp = true;
             AddressOrHostname ntpServer;
         };
 
         void to_json(nlohmann::json& j, const NetworkConfig& value);
         void from_json(const nlohmann::json& j, NetworkConfig& value);
+
+        /** Convert an IP Address in array format as returned by networkd's Describe() methods. */
+        static inline const std::map<int, etcpal::IpAddrType> kNetworkdAddressFamilies{{2, etcpal::IpAddrType::kV4},
+                                                                                       {10, etcpal::IpAddrType::kV6}};
+        static etcpal::IpAddr ipAddrFromNetworkdJson(const nlohmann::json& family, const nlohmann::json& address);
     } // namespace detail
     /**
      * Read/Write system hardware configuration.

@@ -23,8 +23,16 @@ if (EMBEDDED_BUILD)
             SystemConfig.cpp
     )
 
+    find_package(boost_endian REQUIRED CONFIG)
     find_package(inja CONFIG REQUIRED)
-    target_link_libraries(sacnloggerlib PRIVATE pantor::inja)
+    find_package(nlohmann_json CONFIG REQUIRED)
+    include(sdbus-cpp)
+    target_link_libraries(sacnloggerlib PRIVATE
+            Boost::endian
+            nlohmann_json::nlohmann_json
+            pantor::inja
+            sdbus-c++
+    )
 
     include(GNUInstallDirs)
     install(DIRECTORY "${PROJECT_SOURCE_DIR}/resources/system_config" DESTINATION "${CMAKE_INSTALL_DATADIR}/${PROJECT_NAME}" COMPONENT main)

@@ -5,7 +5,7 @@ add_library(sacnlogger_config STATIC
         sacnlogger_share.cpp
         "${PROJECT_BINARY_DIR}/include/sacnlogger_config.h"
 )
-find_package(Boost REQUIRED COMPONENTS dll)
+find_package(boost_dll CONFIG REQUIRED)
 target_link_libraries(sacnlogger_config PRIVATE Boost::dll)
 
 add_subdirectory(sacnloggerlib)

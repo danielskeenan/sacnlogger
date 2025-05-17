@@ -3,7 +3,7 @@ Name=eth0
 
 [Network]
 DHCP={% if network.dhcp %}yes{% else %}no{% endif %}
-{%- if not network.dhcp and network.ntp -%}
+{%- if network.ntpServer != "" -%}
 NTP={{ network.ntpServer }}
 {%- endif %}
 
@@ -12,7 +12,7 @@ NTP={{ network.ntpServer }}
 RoutesToDNS=false
 RoutesToNTP=false
 {%- if network.ntp -%}
-UseNTP=true
+UseNTP={% if network.ntpServer == "" %}true{% else %}false{% endif %}
 {%- endif -%}
 {%- else -%}
 [Address]

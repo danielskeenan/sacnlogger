@@ -1,0 +1,12 @@
+[Match]
+Name=eth0
+
+[Network]
+DHCP=yes
+NTP=us.pool.ntp.org
+
+
+[DHCPv4]
+RoutesToDNS=false
+RoutesToNTP=false
+UseNTP=false

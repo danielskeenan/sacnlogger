@@ -39,11 +39,19 @@ TEST_CASE("Network Write")
             CHECK_THAT(RESOURCES_PATH "/SystemConfigTest/network/dhcp.network",
                        EqualsFile(SACNLOGGER_SYS_PREFIX "/etc/systemd/network/01-eth0.network"));
         }
-        SECTION("With NTP")
+        SECTION("With NTP from DHCP")
         {
             systemConfig.networkConfig.ntp = true;
             systemConfig.writeToSystem();
             CHECK_THAT(RESOURCES_PATH "/SystemConfigTest/network/dhcp-ntp.network",
+                       EqualsFile(SACNLOGGER_SYS_PREFIX "/etc/systemd/network/01-eth0.network"));
+        }
+        SECTION("With NTP from static")
+        {
+            systemConfig.networkConfig.ntp = true;
+            systemConfig.networkConfig.ntpServer = "us.pool.ntp.org";
+            systemConfig.writeToSystem();
+            CHECK_THAT(RESOURCES_PATH "/SystemConfigTest/network/dhcp-ntpstatic.network",
                        EqualsFile(SACNLOGGER_SYS_PREFIX "/etc/systemd/network/01-eth0.network"));
         }
     }
@@ -70,4 +78,10 @@ TEST_CASE("Network Write")
                        EqualsFile(SACNLOGGER_SYS_PREFIX "/etc/systemd/network/01-eth0.network"));
         }
     }
+}
+
+TEST_CASE("Network Read")
+{
+    sacnlogger::SystemConfig systemConfig;
+    systemConfig.readFromSystem();
 }

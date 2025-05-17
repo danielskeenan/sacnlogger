@@ -19,7 +19,7 @@ mmdebstrap:
     - unzip
     - zip
     # Build dependencies
-    - libsdbus-c++-dev
+    - libsystemd-dev
     - uuid-dev
   setup-hooks:
     - mkdir -p $1/usr/share/keyrings

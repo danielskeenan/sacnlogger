@@ -2,7 +2,8 @@
 name: local-deb-installer
 mmdebstrap:
   packages:
-    - libboost-filesystem1.81.0
+    - libsystemd
+    - libuuid1
   customize-hooks:
   - |-
     if [ -n "$IGconf_debstore" ] ; then

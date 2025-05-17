@@ -23,5 +23,11 @@
   }, {
     "name" : "boost-dll",
     "version>=" : "1.88.0"
+  }, {
+    "name" : "nlohmann-json",
+    "version>=" : "3.12.0"
+  }, {
+    "name" : "boost-endian",
+    "version>=" : "1.88.0"
   } ]
 }
