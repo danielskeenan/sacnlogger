@@ -97,6 +97,27 @@ int main(int argc, char* argv[])
     {
         return EXIT_FAILURE;
     }
+
+#ifdef SACNLOGGER_EMBEDDED_BUILD
+    // Configure system.
+    if (config.systemConfig.networkConfig.dhcp)
+    {
+        SPDLOG_INFO("Network: DHCP");
+    }
+    else
+    {
+        SPDLOG_INFO("Network: {} / {} / {}", config.systemConfig.networkConfig.address.ToString(),
+                    config.systemConfig.networkConfig.mask.ToString(),
+                    config.systemConfig.networkConfig.gateway.ToString());
+    }
+    SPDLOG_INFO("NTP: {}", config.systemConfig.networkConfig.ntp ? "enabled" : "disabled");
+    if (config.systemConfig.networkConfig.ntpServer.isValid())
+    {
+        SPDLOG_INFO("Static NTP Server: {}", config.systemConfig.networkConfig.ntpServer.toString());
+    }
+    config.systemConfig.writeToSystem();
+#endif
+
     SPDLOG_INFO("Using universes {}", config.universes);
     SPDLOG_INFO("PAP = {}", config.usePap);
 

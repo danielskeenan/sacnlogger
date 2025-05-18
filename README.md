@@ -14,15 +14,14 @@ This program logs changes to one or more sACN universes to a file.
 
 ## Config File
 
-The config file is in [libconfig](https://hyperrealm.github.io/libconfig/libconfig_manual.html#Configuration-Files)
-format:
+The config file is in json format:
 
-```
-application: {
-  # (Required) List of universes to monitor.
-  universes: [1, 2];
-
-  # (Optional) Respect per-address-priority packets. Defaults to false.
-  usePap: true;
-};
+```json
+{
+  "universes": [
+    1,
+    2
+  ],
+  "usePap": true
+}
 ```

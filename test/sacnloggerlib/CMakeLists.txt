@@ -3,6 +3,7 @@ add_executable(sacnloggerlib_test
         AbbreviationMapTest.cpp
         ConfigTest.cpp
         CsvRowTest.cpp
+        FakeDbus.h
         FileMatcher.h
 )
 

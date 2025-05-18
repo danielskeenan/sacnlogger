@@ -5,6 +5,7 @@ add_executable(${PROJECT_NAME}
 
 find_package(argparse CONFIG REQUIRED)
 find_package(date CONFIG REQUIRED)
+find_package(spdlog CONFIG REQUIRED)
 target_link_libraries(${PROJECT_NAME} PRIVATE
         sacnlogger_config
         argparse::argparse
@@ -12,6 +13,7 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
         date::date-tz
         EtcPal
         sacnloggerlib
+        spdlog::spdlog
 )
 
 install(TARGETS ${PROJECT_NAME} COMPONENT main)

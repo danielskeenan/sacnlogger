@@ -22,8 +22,8 @@
 #include <catch2/catch_test_macros.hpp>
 #include <fstream>
 #include <sacnloggerlib/SystemConfig.h>
-#include <sdbus-c++/sdbus-c++.h>
 #include <thread>
+#include "FakeDbus.h"
 #include "FileMatcher.h"
 
 class ReturnFileContents
@@ -47,7 +47,15 @@ private:
 
 TEST_CASE("Network Write")
 {
-    sacnlogger::SystemConfig systemConfig;
+    FakeDbus dbus;
+    const sdbus::ServiceName networkdService{"org.freedesktop.network1"};
+    bool reloaded = false;
+    auto networkdManager = sdbus::createObject(*dbus.server, sdbus::ObjectPath{"/org/freedesktop/network1"});
+    auto reload = [&reloaded]() { reloaded = true; };
+    networkdManager->addVTable(sdbus::registerMethod("Reload").implementedAs(std::move(reload)))
+        .forInterface("org.freedesktop.network1.Manager");
+
+    sacnlogger::SystemConfig systemConfig(dbus.client);
 
     SECTION("DHCP")
     {
@@ -56,24 +64,30 @@ TEST_CASE("Network Write")
         SECTION("Without NTP")
         {
             systemConfig.networkConfig.ntp = false;
+            REQUIRE(!reloaded);
             systemConfig.writeToSystem();
             CHECK_THAT(RESOURCES_PATH "/SystemConfigTest/network/dhcp.network",
                        EqualsFile(SACNLOGGER_SYS_PREFIX "/etc/systemd/network/01-eth0.network"));
+            CHECK(reloaded);
         }
         SECTION("With NTP from DHCP")
         {
             systemConfig.networkConfig.ntp = true;
+            REQUIRE(!reloaded);
             systemConfig.writeToSystem();
             CHECK_THAT(RESOURCES_PATH "/SystemConfigTest/network/dhcp-ntp.network",
                        EqualsFile(SACNLOGGER_SYS_PREFIX "/etc/systemd/network/01-eth0.network"));
+            CHECK(reloaded);
         }
         SECTION("With NTP from static")
         {
             systemConfig.networkConfig.ntp = true;
             systemConfig.networkConfig.ntpServer = "us.pool.ntp.org";
+            REQUIRE(!reloaded);
             systemConfig.writeToSystem();
             CHECK_THAT(RESOURCES_PATH "/SystemConfigTest/network/dhcp-ntpstatic.network",
                        EqualsFile(SACNLOGGER_SYS_PREFIX "/etc/systemd/network/01-eth0.network"));
+            CHECK(reloaded);
         }
     }
 
@@ -86,39 +100,28 @@ TEST_CASE("Network Write")
         SECTION("Without NTP")
         {
             systemConfig.networkConfig.ntp = false;
+            REQUIRE(!reloaded);
             systemConfig.writeToSystem();
             CHECK_THAT(RESOURCES_PATH "/SystemConfigTest/network/static.network",
                        EqualsFile(SACNLOGGER_SYS_PREFIX "/etc/systemd/network/01-eth0.network"));
+            CHECK(reloaded);
         }
         SECTION("With NTP")
         {
             systemConfig.networkConfig.ntp = true;
             systemConfig.networkConfig.ntpServer = "us.pool.ntp.org";
+            REQUIRE(!reloaded);
             systemConfig.writeToSystem();
             CHECK_THAT(RESOURCES_PATH "/SystemConfigTest/network/static-ntp.network",
                        EqualsFile(SACNLOGGER_SYS_PREFIX "/etc/systemd/network/01-eth0.network"));
+            CHECK(reloaded);
         }
     }
 }
 
 TEST_CASE("Network Read")
 {
-    // Need a fake DBus. See
-    // https://github.com/Kistler-Group/sdbus-cpp/blob/master/docs/using-sdbus-c%2B%2B.md#using-direct-peer-to-peer-d-bus-connections
-    std::array<int, 2> fds{};
-    socketpair(AF_UNIX, SOCK_STREAM, 0, fds.data());
-    std::unique_ptr<sdbus::IConnection> serverConnection;
-    std::shared_ptr<sdbus::IConnection> clientConnection;
-    std::thread t(
-        [&]()
-        {
-            serverConnection = sdbus::createServerBus(fds[0]);
-            // This is necessary so that createDirectBusConnection() below does not block
-            serverConnection->enterEventLoopAsync();
-        });
-    clientConnection = sdbus::createDirectBusConnection(fds[1]);
-    clientConnection->enterEventLoopAsync();
-    t.join();
+    FakeDbus dbus;
 
     // Mock requests for interfaces.
     const sdbus::ServiceName networkdService{"org.freedesktop.network1"};
@@ -126,7 +129,7 @@ TEST_CASE("Network Read")
     const sdbus::MethodName describeMethod{"Describe"};
     const sdbus::ObjectPath loObjectPath{"/org/freedesktop/network1/link/_31"};
     const sdbus::ObjectPath eth0ObjectPath{"/org/freedesktop/network1/link/_32"};
-    auto networkdManager = sdbus::createObject(*serverConnection, sdbus::ObjectPath{"/org/freedesktop/network1"});
+    auto networkdManager = sdbus::createObject(*dbus.server, sdbus::ObjectPath{"/org/freedesktop/network1"});
     auto listLinks = [&]()
     {
         return std::vector<sdbus::Struct<int32_t, std::string, sdbus::ObjectPath>>{
@@ -136,14 +139,14 @@ TEST_CASE("Network Read")
     };
     networkdManager->addVTable(sdbus::registerMethod("ListLinks").implementedAs(std::move(listLinks)))
         .forInterface("org.freedesktop.network1.Manager");
-    auto loObject = sdbus::createObject(*serverConnection, loObjectPath);
+    auto loObject = sdbus::createObject(*dbus.server, loObjectPath);
     loObject
         ->addVTable(sdbus::registerMethod(describeMethod)
                         .implementedAs(ReturnFileContents(RESOURCES_PATH "/SystemConfigTest/network/lo.json")))
         .forInterface(linkInterface);
-    auto eth0Object = sdbus::createObject(*serverConnection, eth0ObjectPath);
+    auto eth0Object = sdbus::createObject(*dbus.server, eth0ObjectPath);
 
-    sacnlogger::SystemConfig systemConfig(clientConnection);
+    sacnlogger::SystemConfig systemConfig(dbus.client);
     SECTION("DHCP")
     {
         SECTION("Without NTP")
@@ -219,7 +222,4 @@ TEST_CASE("Network Read")
         CHECK(systemConfig.networkConfig.mask == etcpal::IpAddr::FromString("255.255.0.0"));
         CHECK(systemConfig.networkConfig.gateway == etcpal::IpAddr::FromString("192.168.1.1"));
     }
-
-    clientConnection->leaveEventLoop();
-    serverConnection->leaveEventLoop();
 }

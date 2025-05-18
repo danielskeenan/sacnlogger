@@ -148,11 +148,17 @@ namespace sacnlogger::detail
     {
         inja::Environment env{config::templateDir(), ""};
 
-        // Network.
+        // Write file.
         SPDLOG_INFO("Writing new network config to {}", netConfigFile().string());
         nlohmann::json j(*this);
         j["prefixLength"] = mask.MaskLength();
         env.write("01-eth0.network", j, netConfigFile());
+
+        // Tell networkd to reload configs.
+        const sdbus::ServiceName networkdService{"org.freedesktop.network1"};
+        auto networkdManager =
+            sdbus::createProxy(*dbus_, networkdService, sdbus::ObjectPath{"/org/freedesktop/network1"});
+        networkdManager->callMethod("Reload").onInterface("org.freedesktop.network1.Manager").dontExpectReply();
     }
 
     std::filesystem::path NetworkConfig::netConfigFile()

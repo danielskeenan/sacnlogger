@@ -2,7 +2,7 @@
 name: local-deb-installer
 mmdebstrap:
   packages:
-    - libsystemd
+    - libsystemd0
     - libuuid1
   customize-hooks:
   - |-

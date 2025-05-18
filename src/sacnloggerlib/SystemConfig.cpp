@@ -23,6 +23,7 @@
 #include <nlohmann/json.hpp>
 #include <sacnlogger_share.h>
 #include <sdbus-c++/sdbus-c++.h>
+#include <spdlog/spdlog.h>
 
 namespace sacnlogger
 {
@@ -44,7 +45,12 @@ namespace sacnlogger
 
     void SystemConfig::readFromSystem() { networkConfig.readFromSystem(); }
 
-    void SystemConfig::writeToSystem() { networkConfig.writeToSystem(); }
+    void SystemConfig::writeToSystem()
+    {
+        SPDLOG_INFO("Writing system config...");
+        networkConfig.writeToSystem();
+        SPDLOG_INFO("System config complete.");
+    }
 
     void to_json(nlohmann::json& j, const SystemConfig& value) { j = nlohmann::json{{kNetwork, value.networkConfig}}; }
 
