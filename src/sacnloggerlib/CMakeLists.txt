@@ -25,6 +25,7 @@ if (EMBEDDED_BUILD)
             SystemConfig/NetworkConfig.cpp
             SystemConfig.cpp
     )
+    target_compile_definitions(sacnloggerlib PUBLIC "SACNLOGGER_EMBEDDED_BUILD")
 
     find_package(boost_bimap REQUIRED CONFIG)
     find_package(boost_endian REQUIRED CONFIG)
@@ -34,6 +35,8 @@ if (EMBEDDED_BUILD)
             Boost::bimap
             Boost::endian
             pantor::inja
+    )
+    target_link_libraries(sacnloggerlib PUBLIC
             sdbus-c++
     )
 endif ()

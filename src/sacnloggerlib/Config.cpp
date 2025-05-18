@@ -33,16 +33,19 @@ namespace sacnlogger
 {
     constexpr auto kUniverses = "universes";
     constexpr auto kUsePap = "usePap";
+    constexpr auto kSystem = "system";
 
-    nlohmann::json getSchema()
+    const nlohmann::json_schema::json_validator& getValidator()
     {
-        static std::optional<nlohmann::json> schema;
-        if (!schema)
+        static std::optional<nlohmann::json_schema::json_validator> validator;
+        if (!validator)
         {
             std::ifstream f(config::schemaDir() / "sacnlogger.schema.json");
-            schema = nlohmann::json::parse(f);
+            static nlohmann::json schema = nlohmann::json::parse(f);
+            validator.emplace(nullptr, nlohmann::json_schema::default_string_format_check);
+            validator->set_root_schema(schema);
         }
-        return *schema;
+        return *validator;
     }
 
     Config Config::loadFromFile(const std::string& filename)
@@ -60,8 +63,7 @@ namespace sacnlogger
         }
 
         // Validate.
-        nlohmann::json_schema::json_validator validator;
-        validator.set_root_schema(getSchema());
+        const auto& validator = getValidator();
         try
         {
             // Apply default values.
@@ -78,6 +80,12 @@ namespace sacnlogger
         Config config;
         json[kUniverses].get_to(config.universes);
         json[kUsePap].get_to(config.usePap);
+#ifdef SACNLOGGER_SYSTEM_CONFIG
+        if (json.contains(kSystem))
+        {
+            json[kSystem].get_to(config.systemConfig);
+        }
+#endif
 
         return config;
     }
@@ -87,11 +95,13 @@ namespace sacnlogger
         nlohmann::json json;
         json[kUniverses] = universes;
         json[kUsePap] = usePap;
+#ifdef SACNLOGGER_SYSTEM_CONFIG
+        json[kSystem] = systemConfig;
+#endif
 
         // Validate resulting output only when building Debug build.
 #ifndef NDEBUG
-        nlohmann::json_schema::json_validator validator;
-        validator.set_root_schema(getSchema());
+        const auto& validator = getValidator();
         validator.validate(json);
 #endif
 

@@ -150,7 +150,9 @@ namespace sacnlogger::detail
 
         // Network.
         SPDLOG_INFO("Writing new network config to {}", netConfigFile().string());
-        env.write("01-eth0.network", nlohmann::json(*this), netConfigFile());
+        nlohmann::json j(*this);
+        j["prefixLength"] = mask.MaskLength();
+        env.write("01-eth0.network", j, netConfigFile());
     }
 
     std::filesystem::path NetworkConfig::netConfigFile()
@@ -188,7 +190,6 @@ namespace sacnlogger::detail
         j = nlohmann::json{{"dhcp", value.dhcp},
                            {"address", value.address.ToString()},
                            {"mask", value.mask.ToString()},
-                           {"prefixLength", value.mask.MaskLength()},
                            {"gateway", value.gateway.ToString()},
                            {"ntp", value.ntp},
                            {"ntpServer", value.ntpServer.toString()}};

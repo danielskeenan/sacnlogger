@@ -22,9 +22,16 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 
+#ifdef SACNLOGGER_EMBEDDED_BUILD
+#define SACNLOGGER_SYSTEM_CONFIG
+#endif
+
 #include <cstdint>
 #include <string>
 #include <vector>
+#ifdef SACNLOGGER_SYSTEM_CONFIG
+#include "SystemConfig.h"
+#endif
 
 namespace sacnlogger
 {
@@ -35,10 +42,13 @@ namespace sacnlogger
     class Config
     {
     public:
-        auto operator<=>(const Config&) const = default;
+        bool operator==(const Config&) const = default;
 
         std::vector<uint16_t> universes;
         bool usePap = false;
+#ifdef SACNLOGGER_SYSTEM_CONFIG
+        SystemConfig systemConfig;
+#endif
 
         static Config loadFromFile(const std::string& filename);
         void saveToFile(const std::string& filename) const;

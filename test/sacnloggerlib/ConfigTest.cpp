@@ -26,7 +26,6 @@
 #include <fmt/ranges.h>
 #include <map>
 #include <sacnloggerlib/ConfigException.h>
-
 #include "sacnloggerlib/Config.h"
 
 static const std::map<std::string, sacnlogger::Config> expectedConfigs{
@@ -42,7 +41,16 @@ namespace Catch
     {
         static std::string convert(const sacnlogger::Config& config)
         {
-            return fmt::format("<Config: Univs {}, PAP {}>", config.universes, config.usePap);
+#ifdef SACNLOGGER_SYSTEM_CONFIG
+            const auto systemConfig = fmt::format(
+                ", Network dhcp {}, {}/{}/{}, ntp {}, {}", config.systemConfig.networkConfig.dhcp,
+                config.systemConfig.networkConfig.address.ToString(), config.systemConfig.networkConfig.mask.ToString(),
+                config.systemConfig.networkConfig.gateway.ToString(), config.systemConfig.networkConfig.ntp,
+                config.systemConfig.networkConfig.ntpServer.toString());
+#else
+            const auto systemConfig = "";
+#endif
+            return fmt::format("<Config: Univs {}, PAP {}{}>", config.universes, config.usePap, systemConfig);
         }
     };
 } // namespace Catch
@@ -57,6 +65,28 @@ TEST_CASE("Config Load")
         REQUIRE_NOTHROW(actual = sacnlogger::Config::loadFromFile(filePath));
         REQUIRE(expected == actual);
     }
+
+#ifdef SACNLOGGER_SYSTEM_CONFIG
+    SECTION("Network")
+    {
+        const auto filePath = fmt::format("{}/ConfigTest/{}", RESOURCES_PATH, "network.json");
+
+        sacnlogger::Config expected{
+            .universes = {1},
+            .usePap = false,
+        };
+        expected.systemConfig.networkConfig.dhcp = false;
+        expected.systemConfig.networkConfig.address = etcpal::IpAddr::FromString("192.168.1.101");
+        expected.systemConfig.networkConfig.mask = etcpal::IpAddr::FromString("255.255.255.0");
+        expected.systemConfig.networkConfig.gateway = etcpal::IpAddr::FromString("192.168.1.1");
+        expected.systemConfig.networkConfig.ntp = true;
+        expected.systemConfig.networkConfig.ntpServer = "us.pool.ntp.org";
+
+        sacnlogger::Config actual;
+        REQUIRE_NOTHROW(actual = sacnlogger::Config::loadFromFile(filePath));
+        REQUIRE(expected == actual);
+    }
+#endif
 
     SECTION("Bad configs")
     {

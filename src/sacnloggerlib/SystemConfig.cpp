@@ -26,6 +26,8 @@
 
 namespace sacnlogger
 {
+    constexpr auto kNetwork = "network";
+
     SystemConfig::SystemConfig(const std::shared_ptr<sdbus::IConnection>& dbus)
     {
         if (!dbus)
@@ -44,8 +46,14 @@ namespace sacnlogger
 
     void SystemConfig::writeToSystem() { networkConfig.writeToSystem(); }
 
-    void to_json(nlohmann::json& j, const SystemConfig& value) { j = nlohmann::json{{"network", value.networkConfig}}; }
+    void to_json(nlohmann::json& j, const SystemConfig& value) { j = nlohmann::json{{kNetwork, value.networkConfig}}; }
 
-    void from_json(const nlohmann::json& j, SystemConfig& value) { j.get_to(value.networkConfig); }
+    void from_json(const nlohmann::json& j, SystemConfig& value)
+    {
+        if (j.contains(kNetwork))
+        {
+            j[kNetwork].get_to(value.networkConfig);
+        }
+    }
 
 } // namespace sacnlogger

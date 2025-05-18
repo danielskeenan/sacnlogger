@@ -34,6 +34,12 @@ namespace sacnlogger::detail
 {
     class NetworkConfig
     {
+        friend bool operator==(const NetworkConfig& lhs, const NetworkConfig& rhs)
+        {
+            return std::tie(lhs.dhcp, lhs.address, lhs.mask, lhs.gateway, lhs.ntp, lhs.ntpServer) ==
+                std::tie(rhs.dhcp, rhs.address, rhs.mask, rhs.gateway, rhs.ntp, rhs.ntpServer);
+        }
+
     public:
         explicit NetworkConfig(const std::shared_ptr<sdbus::IConnection>& dbus = {}) : dbus_(dbus) {}
 

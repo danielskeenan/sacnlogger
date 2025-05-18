@@ -37,12 +37,17 @@ namespace sacnlogger
      */
     class SystemConfig
     {
+        friend bool operator==(const SystemConfig& lhs, const SystemConfig& rhs)
+        {
+            return lhs.networkConfig == rhs.networkConfig;
+        }
+
     public:
         /**
-         *
          * @param dbus A custom dbus connection to use (usually for testing). Defaults to the system bus.
          */
-        explicit SystemConfig(const std::shared_ptr<sdbus::IConnection>& dbus = {});
+        explicit SystemConfig(const std::shared_ptr<sdbus::IConnection>& dbus);
+        SystemConfig() : SystemConfig(nullptr) {}
 
         detail::NetworkConfig networkConfig;
 

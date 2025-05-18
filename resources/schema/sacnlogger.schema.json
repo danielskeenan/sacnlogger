@@ -1,9 +1,24 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "sACN Logger Application Config",
+  "type": "object",
+  "definitions": {
+    "ipAddress": {
+      "oneOf": [
+        {
+          "type": "string",
+          "format": "ipv4"
+        },
+        {
+          "type": "string",
+          "format": "ipv6"
+        }
+      ]
+    }
+  },
   "properties": {
     "universes": {
-      "description": "Universe list",
+      "title": "Universe List",
       "type": "array",
       "minItems": 1,
       "uniqueItems": true,
@@ -14,13 +29,88 @@
       }
     },
     "usePap": {
-      "description": "Use Per-Address-Priority",
+      "descrtitleiption": "Use Per-Address-Priority",
       "type": "boolean",
       "default": false
+    },
+    "system": {
+      "title": "Device Config",
+      "description": "Ignored on non-embedded devices.",
+      "type": "object",
+      "properties": {
+        "network": {
+          "title": "Device Network Config",
+          "type": "object",
+          "properties": {
+            "dhcp": {
+              "type": "boolean",
+              "default": true
+            },
+            "address": {
+              "$ref": "#/definitions/ipAddress"
+            },
+            "mask": {
+              "$ref": "#/definitions/ipAddress"
+            },
+            "gateway": {
+              "$ref": "#/definitions/ipAddress"
+            },
+            "ntp": {
+              "type": "boolean",
+              "default": true
+            },
+            "ntpServer": {
+              "oneOf": [
+                {
+                  "$ref": "#/definitions/ipAddress"
+                },
+                {
+                  "type": "string",
+                  "format": "hostname"
+                }
+              ]
+            }
+          },
+          "allOf": [
+            {
+              "if": {
+                "properties": {
+                  "dhcp": {
+                    "const": false
+                  }
+                }
+              },
+              "then": {
+                "required": [
+                  "address",
+                  "mask",
+                  "gateway"
+                ]
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "ntp": {
+                    "const": true
+                  },
+                  "dhcp": {
+                    "const": false
+                  }
+                }
+              },
+              "then": {
+                "required": [
+                  "ntpServer"
+                ]
+              }
+            }
+          ]
+        }
+      }
     }
   },
   "required": [
     "universes"
-  ],
-  "type": "object"
+  ]
 }
