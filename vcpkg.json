@@ -1,7 +1,7 @@
 {
   "name" : "sacnlogger",
   "version-string" : "1.0.0",
-  "builtin-baseline" : "efb1e7436979a30c4d3e5ab2375fd8e2e461d541",
+  "builtin-baseline" : "f26ec398c25c4980f33a50391f00a75f7ad62ef7",
   "dependencies" : [ {
     "name" : "spdlog",
     "version>=" : "1.15.1"
