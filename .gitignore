@@ -49,4 +49,4 @@ cmake-build-*
 install_root
 
 ### Other files
-/*.cfg
+/sacnlogger.json

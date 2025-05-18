@@ -5,10 +5,10 @@ After=network.target time-set.target media-sacnlogger-disk.mount
 Requisite=network.target time-set.target
 BindsTo=media-sacnlogger-disk.mount
 CollectMode=inactive-or-failed
-ConditionPathExists=/media/sacnlogger/disk/sacnlogger.cfg
+ConditionPathExists=/media/sacnlogger/disk/sacnlogger.json
 
 [Service]
 Type=exec
 Restart=always
 WorkingDirectory=/media/sacnlogger/disk
-ExecStart=/usr/bin/sacnlogger /media/sacnlogger/disk/sacnlogger.cfg
+ExecStart=/usr/bin/sacnlogger /media/sacnlogger/disk/sacnlogger.json

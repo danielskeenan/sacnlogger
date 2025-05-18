@@ -30,9 +30,9 @@
 #include "sacnloggerlib/Config.h"
 
 static const std::map<std::string, sacnlogger::Config> expectedConfigs{
-    {"one_univ.cfg", {.universes = {1}, .usePap = false}},
-    {"five_univ.cfg", {.universes = {1, 2, 3, 4, 5}, .usePap = false}},
-    {"use_pap.cfg", {.universes = {1}, .usePap = true}},
+    {"one_univ.json", {.universes = {1}, .usePap = false}},
+    {"five_univ.json", {.universes = {1, 2, 3, 4, 5}, .usePap = false}},
+    {"use_pap.json", {.universes = {1}, .usePap = true}},
 };
 
 namespace Catch
@@ -60,21 +60,21 @@ TEST_CASE("Config Load")
 
     SECTION("Bad configs")
     {
-        SECTION("bad_univ.cfg")
+        SECTION("bad_univ.json")
         {
-            const auto filePath = fmt::format("{}/ConfigTest/{}", RESOURCES_PATH, "bad_univ.cfg");
+            const auto filePath = fmt::format("{}/ConfigTest/{}", RESOURCES_PATH, "bad_univ.json");
             sacnlogger::Config actual;
             REQUIRE_THROWS_AS(sacnlogger::Config::loadFromFile(filePath), sacnlogger::ConfigException);
         }
-        SECTION("malformed.cfg")
+        SECTION("malformed.json")
         {
-            const auto filePath = fmt::format("{}/ConfigTest/{}", RESOURCES_PATH, "malformed.cfg");
+            const auto filePath = fmt::format("{}/ConfigTest/{}", RESOURCES_PATH, "malformed.json");
             sacnlogger::Config actual;
             REQUIRE_THROWS_AS(sacnlogger::Config::loadFromFile(filePath), sacnlogger::ConfigException);
         }
-        SECTION("doubled_univ.cfg")
+        SECTION("doubled_univ.json")
         {
-            const auto filePath = fmt::format("{}/ConfigTest/{}", RESOURCES_PATH, "doubled_univ.cfg");
+            const auto filePath = fmt::format("{}/ConfigTest/{}", RESOURCES_PATH, "doubled_univ.json");
             sacnlogger::Config actual;
             REQUIRE_THROWS_AS(sacnlogger::Config::loadFromFile(filePath), sacnlogger::ConfigException);
         }

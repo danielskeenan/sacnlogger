@@ -48,6 +48,8 @@ namespace sacnlogger::config
 
     std::filesystem::path templateDir() { return shareDir() / "system_config" / "templates/"; }
 
+    std::filesystem::path schemaDir() { return shareDir() / "schema/"; }
+
     std::filesystem::path systemPrefix()
     {
         static std::filesystem::path resolvedPrefix;

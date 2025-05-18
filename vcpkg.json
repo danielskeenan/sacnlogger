@@ -33,7 +33,7 @@
     "name" : "boost-bimap",
     "version>=" : "1.88.0"
   }, {
-    "name" : "libconfig",
-    "version>=" : "1.8"
+    "name" : "json-schema-validator",
+    "version>=" : "2.3.0#2"
   } ]
 }

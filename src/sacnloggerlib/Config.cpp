@@ -20,100 +20,90 @@
  */
 
 #include "sacnloggerlib/Config.h"
-#include <libconfig.h++>
-#include <sacn/cpp/common.h>
-#include <spdlog/spdlog.h>
-
+#include <fstream>
+#include <nlohmann/json-schema.hpp>
+#include <nlohmann/json.hpp>
 #include <sacn/common.h>
+#include <sacn/cpp/common.h>
+#include <sacnlogger_share.h>
+#include <spdlog/spdlog.h>
 #include "sacnloggerlib/ConfigException.h"
 
 namespace sacnlogger
 {
-    constexpr auto kApplication = "application";
     constexpr auto kUniverses = "universes";
     constexpr auto kUsePap = "usePap";
 
+    nlohmann::json getSchema()
+    {
+        static std::optional<nlohmann::json> schema;
+        if (!schema)
+        {
+            std::ifstream f(config::schemaDir() / "sacnlogger.schema.json");
+            schema = nlohmann::json::parse(f);
+        }
+        return *schema;
+    }
+
     Config Config::loadFromFile(const std::string& filename)
     {
+        nlohmann::json json;
+        try
+        {
+            std::ifstream f(filename, std::ios::binary);
+            json = nlohmann::json::parse(f);
+        }
+        catch (const std::exception& e)
+        {
+            SPDLOG_CRITICAL("Error parsing config file: {}", e.what());
+            throw ConfigException("Error parsing config file", e);
+        }
+
+        // Validate.
+        nlohmann::json_schema::json_validator validator;
+        validator.set_root_schema(getSchema());
+        try
+        {
+            // Apply default values.
+            const auto patch = validator.validate(json);
+            json.patch_inplace(patch);
+        }
+        catch (const std::exception& e)
+        {
+            SPDLOG_CRITICAL("Invalid config file: {}", e.what());
+            throw ConfigException("Invalid config file", e);
+        }
+
+        // Load.
         Config config;
-
-        // Load file.
-        libconfig::Config c;
-        try
-        {
-            c.readFile(filename);
-        }
-        catch (const libconfig::FileIOException& e)
-        {
-            SPDLOG_CRITICAL("Error reading config file - {}", e.what());
-            throw ConfigException("Error reading config file.", e);
-        }
-        catch (const libconfig::ParseException& e)
-        {
-            SPDLOG_CRITICAL("Error parsing config file {}:{} - {}", e.getFile(), e.getLine(), e.getError());
-            throw ConfigException("Error parsing config file.", e);
-        }
-
-        // Read config.
-        try
-        {
-            // Application.
-            const auto& appConfig = c.lookup(kApplication);
-            // Universes.
-            const auto& universes = appConfig.lookup(kUniverses);
-            for (const auto& cfgUniverse : universes)
-            {
-                const unsigned int universe = cfgUniverse;
-                if (universe < sacn::kMinimumUniverse || universe > sacn::kMaximumUniverse)
-                {
-                    SPDLOG_CRITICAL("Universe out of range - {}", universe);
-                    throw ConfigException("Universe out of range.");
-                }
-                if (std::ranges::find(config.universes, universe) != config.universes.end())
-                {
-                    // Duplicate universe.
-                    SPDLOG_CRITICAL("Malformed config file: Universe '{}' is listed more than once.", universe);
-                    throw ConfigException("Malformed config file: Universe is listed more than once.");
-                }
-                config.universes.push_back(universe);
-            }
-            // Use PaP
-            if (appConfig.exists(kUsePap))
-            {
-                config.usePap = appConfig.lookup(kUsePap);
-            }
-        }
-        catch (const libconfig::ConfigException& e)
-        {
-            SPDLOG_CRITICAL("Error reading application config - {}", e.what());
-            throw ConfigException("Error reading application config.", e);
-        }
+        json[kUniverses].get_to(config.universes);
+        json[kUsePap].get_to(config.usePap);
 
         return config;
     }
 
     void Config::saveToFile(const std::string& filename) const
     {
-        libconfig::Config c;
-        auto& root = c.getRoot();
+        nlohmann::json json;
+        json[kUniverses] = universes;
+        json[kUsePap] = usePap;
 
-        // Application.
-        auto& appConfig = root.add(kApplication, libconfig::Setting::TypeGroup);
-        auto& universesConfig = appConfig.add(kUniverses, libconfig::Setting::TypeArray);
-        for (const auto universe : universes)
-        {
-            universesConfig.add(libconfig::Setting::TypeInt) = universe;
-        }
-        appConfig.add(kUsePap, libconfig::Setting::TypeBoolean) = usePap;
+        // Validate resulting output only when building Debug build.
+#ifndef NDEBUG
+        nlohmann::json_schema::json_validator validator;
+        validator.set_root_schema(getSchema());
+        validator.validate(json);
+#endif
 
         try
         {
-            c.writeFile(filename);
+            std::ofstream f(filename, std::ios::binary);
+            f << json;
         }
-        catch (const libconfig::FileIOException& e)
+        catch (const std::exception& e)
         {
-            SPDLOG_CRITICAL("Error writing config file - {}", filename);
-            throw ConfigException("Error writing config file", e);
+            SPDLOG_CRITICAL("Error saving config file: {}", e.what());
+            throw ConfigException("Error saving config file", e);
         }
     }
 } // namespace sacnlogger

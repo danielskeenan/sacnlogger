@@ -40,6 +40,11 @@ namespace sacnlogger::config
     std::filesystem::path templateDir();
 
     /**
+     * Path to file schemas.
+     */
+    std::filesystem::path schemaDir();
+
+    /**
      * Path to prefix where files should be installed.
      *
      * To change this for runtime, set the environment variable `SACNLOGGER_SYS_PREFIX`.
