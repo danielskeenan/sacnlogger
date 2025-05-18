@@ -2,21 +2,21 @@
 Name=eth0
 
 [Network]
-DHCP={% if network.dhcp %}yes{% else %}no{% endif %}
-{%- if network.ntpServer != "" -%}
-NTP={{ network.ntpServer }}
+DHCP={% if dhcp %}yes{% else %}no{% endif %}
+{%- if ntpServer != "" -%}
+NTP={{ ntpServer }}
 {%- endif %}
 
-{% if network.dhcp -%}
+{% if dhcp -%}
 [DHCPv4]
 RoutesToDNS=false
 RoutesToNTP=false
-{%- if network.ntp -%}
-UseNTP={% if network.ntpServer == "" %}true{% else %}false{% endif %}
+{%- if ntp -%}
+UseNTP={% if ntpServer == "" %}true{% else %}false{% endif %}
 {%- endif -%}
 {%- else -%}
 [Address]
-Address={{ network.address }}/{{ network.prefixLength }}
+Address={{ address }}/{{ prefixLength }}
 [Route]
-Gateway={{ network.gateway }}
+Gateway={{ gateway }}
 {%- endif -%}

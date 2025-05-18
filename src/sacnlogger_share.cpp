@@ -45,4 +45,26 @@ namespace sacnlogger::config
         }
         return resolvedShareDir;
     }
+
+    std::filesystem::path templateDir() { return shareDir() / "system_config" / "templates/"; }
+
+    std::filesystem::path systemPrefix()
+    {
+        static std::filesystem::path resolvedPrefix;
+        if (resolvedPrefix.empty())
+        {
+            auto sysPrefix = std::getenv("SACNLOGGER_SYS_PREFIX");
+            if (sysPrefix == nullptr || sysPrefix == "")
+            {
+                resolvedPrefix = "/";
+            }
+            else
+            {
+                resolvedPrefix = sysPrefix;
+            }
+            resolvedPrefix = std::filesystem::absolute(resolvedPrefix);
+        }
+        return resolvedPrefix;
+    }
+
 } // namespace sacnlogger::config

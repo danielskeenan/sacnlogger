@@ -29,5 +29,8 @@
   }, {
     "name" : "boost-endian",
     "version>=" : "1.88.0"
+  }, {
+    "name" : "boost-bimap",
+    "version>=" : "1.88.0"
   } ]
 }

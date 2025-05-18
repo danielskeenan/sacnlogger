@@ -33,6 +33,20 @@ namespace sacnlogger::config
      * To override at runtime, set the env var `SACNLOGGER_SHAREDIR`.
      */
     std::filesystem::path shareDir() noexcept;
-}
+
+    /**
+     * Path to file templates.
+     */
+    std::filesystem::path templateDir();
+
+    /**
+     * Path to prefix where files should be installed.
+     *
+     * To change this for runtime, set the environment variable `SACNLOGGER_SYS_PREFIX`.
+     *
+     * Defaults to `/`.
+     */
+    std::filesystem::path systemPrefix();
+} // namespace sacnlogger::config
 
 #endif // SACNLOGGER_SHARE_H

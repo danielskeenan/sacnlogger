@@ -108,7 +108,7 @@ TEST_CASE("Network Read")
     std::array<int, 2> fds{};
     socketpair(AF_UNIX, SOCK_STREAM, 0, fds.data());
     std::unique_ptr<sdbus::IConnection> serverConnection;
-    std::unique_ptr<sdbus::IConnection> clientConnection;
+    std::shared_ptr<sdbus::IConnection> clientConnection;
     std::thread t(
         [&]()
         {
@@ -143,7 +143,7 @@ TEST_CASE("Network Read")
         .forInterface(linkInterface);
     auto eth0Object = sdbus::createObject(*serverConnection, eth0ObjectPath);
 
-    sacnlogger::SystemConfig systemConfig(clientConnection.get());
+    sacnlogger::SystemConfig systemConfig(clientConnection);
     SECTION("DHCP")
     {
         SECTION("Without NTP")
@@ -205,9 +205,9 @@ TEST_CASE("Network Read")
         SECTION("With NTP")
         {
             eth0Object
-                ->addVTable(sdbus::registerMethod(describeMethod)
-                                .implementedAs(
-                                    ReturnFileContents(RESOURCES_PATH "/SystemConfigTest/network/static-ntp.json")))
+                ->addVTable(
+                    sdbus::registerMethod(describeMethod)
+                        .implementedAs(ReturnFileContents(RESOURCES_PATH "/SystemConfigTest/network/static-ntp.json")))
                 .forInterface(linkInterface);
 
             systemConfig.readFromSystem();

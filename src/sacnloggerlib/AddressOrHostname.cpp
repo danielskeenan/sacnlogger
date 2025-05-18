@@ -19,7 +19,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "sacnloggerlib/AddressOrHostname.h"
+#include "../../include/sacnloggerlib/SystemConfig/AddressOrHostname.h"
 #include <regex>
 
 namespace sacnlogger

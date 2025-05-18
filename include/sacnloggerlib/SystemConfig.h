@@ -22,10 +22,8 @@
 #ifndef SYSTEMCONFIG_H
 #define SYSTEMCONFIG_H
 
-#include <etcpal/cpp/inet.h>
 #include <filesystem>
-#include <nlohmann/json_fwd.hpp>
-#include "AddressOrHostname.h"
+#include "SystemConfig/NetworkConfig.h"
 
 namespace sdbus
 {
@@ -34,26 +32,6 @@ namespace sdbus
 
 namespace sacnlogger
 {
-    namespace detail
-    {
-        struct NetworkConfig
-        {
-            bool dhcp = true;
-            etcpal::IpAddr address;
-            etcpal::IpAddr mask;
-            etcpal::IpAddr gateway;
-            bool ntp = true;
-            AddressOrHostname ntpServer;
-        };
-
-        void to_json(nlohmann::json& j, const NetworkConfig& value);
-        void from_json(const nlohmann::json& j, NetworkConfig& value);
-
-        /** Convert an IP Address in array format as returned by networkd's Describe() methods. */
-        static inline const std::map<int, etcpal::IpAddrType> kNetworkdAddressFamilies{{2, etcpal::IpAddrType::kV4},
-                                                                                       {10, etcpal::IpAddrType::kV6}};
-        static etcpal::IpAddr ipAddrFromNetworkdJson(const nlohmann::json& family, const nlohmann::json& address);
-    } // namespace detail
     /**
      * Read/Write system hardware configuration.
      */
@@ -64,8 +42,7 @@ namespace sacnlogger
          *
          * @param dbus A custom dbus connection to use (usually for testing). Defaults to the system bus.
          */
-        explicit SystemConfig(sdbus::IConnection* dbus = nullptr);
-        ~SystemConfig();
+        explicit SystemConfig(const std::shared_ptr<sdbus::IConnection>& dbus = {});
 
         detail::NetworkConfig networkConfig;
 
@@ -74,23 +51,7 @@ namespace sacnlogger
 
     private:
         // Allow testing with a fake dbus connection.
-        sdbus::IConnection* dbus_;
-        bool isSystemBus_;
-
-        /**
-         * Path to file templates.
-         */
-        static std::filesystem::path templateDir();
-        /**
-         * Path to prefix where files should be installed.
-         *
-         * To change this for runtime, set the environment variable `SACNLOGGER_SYS_PREFIX`.
-         *
-         * Defaults to `/`.
-         */
-        static std::filesystem::path systemPrefix();
-        /** Path to systemd-network interface configuration file relative to systemPrefix(). */
-        static std::filesystem::path netConfigFile();
+        std::shared_ptr<sdbus::IConnection> dbus_;
     };
 
     void to_json(nlohmann::json& j, const SystemConfig& value);

@@ -20,14 +20,17 @@ target_link_libraries(sacnloggerlib PUBLIC
 
 if (EMBEDDED_BUILD)
     target_sources(sacnloggerlib PRIVATE
+            SystemConfig/NetworkConfig.cpp
             SystemConfig.cpp
     )
 
+    find_package(boost_bimap REQUIRED CONFIG)
     find_package(boost_endian REQUIRED CONFIG)
     find_package(inja CONFIG REQUIRED)
     find_package(nlohmann_json CONFIG REQUIRED)
     include(sdbus-cpp)
     target_link_libraries(sacnloggerlib PRIVATE
+            Boost::bimap
             Boost::endian
             nlohmann_json::nlohmann_json
             pantor::inja
