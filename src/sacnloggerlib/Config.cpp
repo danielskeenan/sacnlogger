@@ -20,71 +20,73 @@
  */
 
 #include "sacnloggerlib/Config.h"
-#include <fstream>
+#include <libconfig.h++>
 #include <sacn/cpp/common.h>
 #include <spdlog/spdlog.h>
-#include <yaml-cpp/yaml.h>
+
+#include <sacn/common.h>
 #include "sacnloggerlib/ConfigException.h"
 
 namespace sacnlogger
 {
-    static constexpr auto kConfUniverses = "universes";
-    static constexpr auto kConfUsePap = "usePap";
+    constexpr auto kApplication = "application";
+    constexpr auto kUniverses = "universes";
+    constexpr auto kUsePap = "usePap";
+
     Config Config::loadFromFile(const std::string& filename)
     {
         Config config;
 
         // Load file.
-        YAML::Node yaml;
+        libconfig::Config c;
         try
         {
-            yaml = YAML::LoadFile(filename);
+            c.readFile(filename);
         }
-        catch (const YAML::Exception& e)
+        catch (const libconfig::FileIOException& e)
         {
-            SPDLOG_CRITICAL("Error loading config file: {}.", e.what());
-            throw ConfigException("Error loading config file.", e);
+            SPDLOG_CRITICAL("Error reading config file - {}", e.what());
+            throw ConfigException("Error reading config file.", e);
         }
-
-        // Verify format.
-        if (!yaml.IsMap())
+        catch (const libconfig::ParseException& e)
         {
-            SPDLOG_CRITICAL("Malformed config file: Not a map.");
-            throw ConfigException("Malformed config file: Not a map.");
+            SPDLOG_CRITICAL("Error parsing config file {}:{} - {}", e.getFile(), e.getLine(), e.getError());
+            throw ConfigException("Error parsing config file.", e);
         }
 
-        // Universes.
-        if (!yaml[kConfUniverses].IsSequence())
+        // Read config.
+        try
         {
-            SPDLOG_CRITICAL("Malformed config file: 'universes` not present or wrong format.");
-            throw ConfigException("Malformed config file: 'universes` not present or wrong format.");
+            // Application.
+            const auto& appConfig = c.lookup(kApplication);
+            // Universes.
+            const auto& universes = appConfig.lookup(kUniverses);
+            for (const auto& cfgUniverse : universes)
+            {
+                const unsigned int universe = cfgUniverse;
+                if (universe < sacn::kMinimumUniverse || universe > sacn::kMaximumUniverse)
+                {
+                    SPDLOG_CRITICAL("Universe out of range - {}", universe);
+                    throw ConfigException("Universe out of range.");
+                }
+                if (std::ranges::find(config.universes, universe) != config.universes.end())
+                {
+                    // Duplicate universe.
+                    SPDLOG_CRITICAL("Malformed config file: Universe '{}' is listed more than once.", universe);
+                    throw ConfigException("Malformed config file: Universe is listed more than once.");
+                }
+                config.universes.push_back(universe);
+            }
+            // Use PaP
+            if (appConfig.exists(kUsePap))
+            {
+                config.usePap = appConfig.lookup(kUsePap);
+            }
         }
-        for (const auto& universe : yaml[kConfUniverses])
+        catch (const libconfig::ConfigException& e)
         {
-            if (!universe.IsScalar())
-            {
-                SPDLOG_CRITICAL("Malformed config file: Universe '{}' is invalid.", universe.as<std::string>());
-                throw ConfigException("Malformed config file: Universe is invalid.");
-            }
-            const auto universeInt = universe.as<int>();
-            if (universeInt > sacn::kMaximumUniverse || universeInt < sacn::kMinimumUniverse)
-            {
-                SPDLOG_CRITICAL("Malformed config file: Universe '{}' is out of range.", universeInt);
-                throw ConfigException("Malformed config file: Universe is out of range.");
-            }
-            if (std::ranges::find(config.universes, universeInt) != config.universes.end())
-            {
-                // Duplicate universe.
-                SPDLOG_CRITICAL("Malformed config file: Universe '{}' is listed more than once.", universeInt);
-                throw ConfigException("Malformed config file: Universe is listed more than once.");
-            }
-            config.universes.push_back(universeInt);
-        }
-
-        // Use PAP
-        if (yaml[kConfUsePap].IsScalar())
-        {
-            config.usePap = yaml[kConfUsePap].as<bool>();
+            SPDLOG_CRITICAL("Error reading application config - {}", e.what());
+            throw ConfigException("Error reading application config.", e);
         }
 
         return config;
@@ -92,16 +94,26 @@ namespace sacnlogger
 
     void Config::saveToFile(const std::string& filename) const
     {
-        YAML::Node yaml;
-        yaml[kConfUniverses] = universes;
-        yaml[kConfUsePap] = usePap;
+        libconfig::Config c;
+        auto& root = c.getRoot();
 
-        std::ofstream out(filename);
-        if (!out.is_open())
+        // Application.
+        auto& appConfig = root.add(kApplication, libconfig::Setting::TypeGroup);
+        auto& universesConfig = appConfig.add(kUniverses, libconfig::Setting::TypeArray);
+        for (const auto universe : universes)
         {
-            SPDLOG_CRITICAL("Error writing config file: {}", filename);
-            throw std::runtime_error("Error writing config file");
+            universesConfig.add(libconfig::Setting::TypeInt) = universe;
         }
-        out << yaml;
+        appConfig.add(kUsePap, libconfig::Setting::TypeBoolean) = usePap;
+
+        try
+        {
+            c.writeFile(filename);
+        }
+        catch (const libconfig::FileIOException& e)
+        {
+            SPDLOG_CRITICAL("Error writing config file - {}", filename);
+            throw ConfigException("Error writing config file", e);
+        }
     }
 } // namespace sacnlogger

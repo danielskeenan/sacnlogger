@@ -32,5 +32,8 @@
   }, {
     "name" : "boost-bimap",
     "version>=" : "1.88.0"
+  }, {
+    "name" : "libconfig",
+    "version>=" : "1.8"
   } ]
 }

@@ -8,14 +8,14 @@ add_library(sacnloggerlib STATIC
 
 find_package(fmt CONFIG REQUIRED)
 include(sACN)
+find_package(libconfig CONFIG REQUIRED)
 find_package(spdlog CONFIG REQUIRED)
-include(yaml-cpp)
 target_link_libraries(sacnloggerlib PUBLIC
         sacnlogger_config
         fmt::fmt
+        libconfig::config++
         sACN
         spdlog::spdlog
-        yaml-cpp
 )
 
 if (EMBEDDED_BUILD)

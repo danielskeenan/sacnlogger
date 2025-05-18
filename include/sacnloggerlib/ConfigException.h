@@ -31,7 +31,7 @@ namespace sacnlogger
     {
     public:
         using std::runtime_error::runtime_error;
-        explicit ConfigException(const std::string& message, const std::runtime_error& parentError) :
+        explicit ConfigException(const std::string& message, const std::exception& parentError) :
             std::runtime_error(message + " previous error: " + parentError.what())
         {
         }

@@ -9,18 +9,20 @@ This program logs changes to one or more sACN universes to a file.
 - Logs winning levels, priority, and owner per-address.
 
 ## Usage
+
 `sacnlogger <path to config file>` will begin logging to files in the current working directory.
 
 ## Config File
 
-The config file is in YAML format:
+The config file is in [libconfig](https://hyperrealm.github.io/libconfig/libconfig_manual.html#Configuration-Files)
+format:
 
-```yaml
-# (Required) List of universes to monitor.
-universes:
-  - 1
-  - 2
+```
+application: {
+  # (Required) List of universes to monitor.
+  universes: [1, 2];
 
-# (Optional) Respect per-address-priority packets. Defaults to false.
-usePap: true
+  # (Optional) Respect per-address-priority packets. Defaults to false.
+  usePap: true;
+};
 ```
