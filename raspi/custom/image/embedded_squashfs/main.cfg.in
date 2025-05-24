@@ -16,7 +16,7 @@ image boot.vfat {
       label = "BOOT"
       extraargs = "-s 4 -S <SECTOR_SIZE>"
    }
-   size = <FW_SIZE>
+   size = <BOOT_PART_SIZE>
    mountpoint = "/boot/firmware"
    exec-pre = "<EMBED_HOOK>"
 }

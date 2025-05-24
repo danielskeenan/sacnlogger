@@ -17,8 +17,6 @@ cp ro_assets.cfg.in ${genimg_in}/genimage01.cfg
 # Because the compressed filesystem lives here, genimage can't guess the required size.
 # Keep an eye on space usage and adjust this as needed.
 # TODO: Is there a way to automate this?
-FW_SIZE=512M
-ROOT_SIZE=150%
 
 WRITER=$(readlink -f writer.sh)
 
@@ -26,8 +24,7 @@ cat main.cfg.in | sed \
    -e "s|<IMAGE_DIR>|$IGconf_sys_outputdir|g" \
    -e "s|<IMAGE_NAME>|$IGconf_image_name|g" \
    -e "s|<IMAGE_SUFFIX>|$IGconf_image_suffix|g" \
-   -e "s|<FW_SIZE>|$FW_SIZE|g" \
-   -e "s|<ROOT_SIZE>|$ROOT_SIZE|g" \
+   -e "s|<BOOT_PART_SIZE>|$IGconf_image_boot_part_size|g" \
    -e "s|<SECTOR_SIZE>|$IGconf_device_sector_size|g" \
    -e "s|<EMBED_HOOK>|$WRITER|g" \
    > ${genimg_in}/genimage02.cfg

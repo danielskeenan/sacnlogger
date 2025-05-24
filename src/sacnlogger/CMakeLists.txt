@@ -15,5 +15,6 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
         sacnloggerlib
         spdlog::spdlog
 )
+add_dependencies(${PROJECT_NAME} sacnlogger_webui)
 
 install(TARGETS ${PROJECT_NAME} COMPONENT main)

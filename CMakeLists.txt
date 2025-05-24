@@ -15,11 +15,13 @@ string(TIMESTAMP PROJECT_BUILD_TIMESTAMP "%s" UTC)
 find_package(Git REQUIRED)
 execute_process(COMMAND "${GIT_EXECUTABLE}" log -n1 --format=%H
         OUTPUT_VARIABLE PROJECT_COMMIT_SHA
+        WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}"
         COMMAND_ERROR_IS_FATAL ANY
 )
 string(STRIP "${PROJECT_COMMIT_SHA}" PROJECT_COMMIT_SHA)
 execute_process(COMMAND "${GIT_EXECUTABLE}" tag --points-at=HEAD
         OUTPUT_VARIABLE PROJECT_COMMIT_TAG
+        WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}"
         COMMAND_ERROR_IS_FATAL ANY
 )
 string(STRIP "${PROJECT_COMMIT_TAG}" PROJECT_COMMIT_TAG)
@@ -43,6 +45,7 @@ if (BUILD_EXEC)
     set(SHARE_DIR "../${CMAKE_INSTALL_DATADIR}/sacnlogger")
 
     add_subdirectory(src)
+    add_subdirectory(webui)
 
     include(CTest)
     if (BUILD_TESTING)

@@ -28,6 +28,13 @@ RUN wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/nul
     rm /usr/share/keyrings/kitware-archive-keyring.gpg &&\
     apt-get install -y kitware-archive-keyring cmake
 
+# Get Node.js
+RUN curl -fsSL https://deb.nodesource.com/setup_22.x -o nodesource_setup.sh &&\
+    bash nodesource_setup.sh &&\
+    apt-get install -y nodejs &&\
+    rm nodesource_setup.sh &&\
+    node -v
+
 # User setup.
 ENV USER=crossbuild
 RUN /bin/bash -c 'echo "${USER} ALL=(ALL:ALL) NOPASSWD: ALL" > /etc/sudoers.d/nopasswd'
@@ -63,7 +70,7 @@ RUN mkdir ${VCPKG_OVERLAY_TRIPLETS} &&\
     echo "set(VCPKG_CHAINLOAD_TOOLCHAIN_FILE /home/${USER}/arm64-linux-gnu-crossbuild.cmake)" >> "${VCPKG_OVERLAY_TRIPLETS}/arm64-linux-crossbuild.cmake"
 
 RUN git config --global --add safe.directory /home/${USER}/work
-COPY . /home/${USER}/work/
+COPY --chown=${USER}:${USER} . /home/${USER}/work/
 WORKDIR /home/${USER}/work
 
 CMD ["sh"]

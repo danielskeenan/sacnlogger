@@ -3,6 +3,7 @@ name: build-tools
 mmdebstrap:
   mirrors:
     - deb https://apt.kitware.com/ubuntu/ jammy main
+    - deb https://deb.nodesource.com/node_22.x nodistro main
   packages:
     - apt
     - build-essential
@@ -20,19 +21,33 @@ mmdebstrap:
     - zip
     # Build dependencies
     - libsystemd-dev
+    - nodejs
     - uuid-dev
   setup-hooks:
     - mkdir -p $1/usr/share/keyrings
+    # Kitware apt repo
     - curl -fsSL https://apt.kitware.com/keys/kitware-archive-latest.asc -o $1/usr/share/keyrings/kitware-archive-keyring.asc
     - chmod a+r $1/usr/share/keyrings/kitware-archive-keyring.asc
     - cp -p $1/usr/share/keyrings/kitware-archive-keyring.asc $IGconf_sys_apt_keydir
+    # Node.js
+    - curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | gpg --dearmor -o $1/usr/share/keyrings/nodesource.gpg
+    - chmod a+r $1/usr/share/keyrings/nodesource.gpg
+    - cp -p $1/usr/share/keyrings/nodesource.gpg $IGconf_sys_apt_keydir
   customize-hooks:
     - mkdir -p $1/etc/apt/sources.list.d
+    # CMake
     - |-
       cat <<- EOF > $1/etc/apt/sources.list.d/kitware.list
       deb [signed-by=/usr/share/keyrings/kitware-archive-keyring.asc] https://apt.kitware.com/ubuntu/ jammy main
       EOF
     - sed -i '/apt\.kitware\.com/d' $1/etc/apt/sources.list
+    # Node.js
+    - |-
+      cat <<- EOF > $1/etc/apt/sources.list.d/nodesource.list
+      deb [signed-by=/usr/share/keyrings/nodesource.gpg] https://deb.nodesource.com/node_22.x nodistro main
+      EOF
+    - sed -i '/deb\.nodesource\.com/d' $1/etc/apt/sources.list
+    # vcpkg
     - git clone https://github.com/microsoft/vcpkg.git $1/home/${IGconf_device_user1}/.vcpkg
     - chroot $1 sh -c "cd /home/${IGconf_device_user1}/.vcpkg && ./bootstrap-vcpkg.sh"
     - chroot $1 sh -c "chown -R ${IGconf_device_user1}:${IGconf_device_user1} /home/${IGconf_device_user1}/.vcpkg"
