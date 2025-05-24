@@ -3,6 +3,7 @@ add_library(sacnloggerlib STATIC
         AddressOrHostname.cpp
         Config.cpp
         CsvRow.cpp
+        Runner.cpp
         UniverseMonitor.cpp
 )
 

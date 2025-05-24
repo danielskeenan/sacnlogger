@@ -22,7 +22,6 @@
 #include <argparse/argparse.hpp>
 #include <csignal>
 #include <etcpal/common.h>
-#include <fmt/ranges.h>
 #include <sacn/cpp/common.h>
 #include <spdlog/sinks/rotating_file_sink.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
@@ -33,16 +32,15 @@
 #include "sacnlogger_config.h"
 #include "sacnloggerlib/Config.h"
 #include "sacnloggerlib/ConfigException.h"
+#include "sacnloggerlib/Runner.h"
 #include "sacnloggerlib/UniverseMonitor.h"
 
 bool termRequested = false;
-std::vector<sacnlogger::UniverseMonitor> universeMonitors;
 
 void requestTerm(int) { termRequested = true; }
 
 void sacnCleanup()
 {
-    universeMonitors.clear();
     sacn::Deinit();
     etcpal_deinit(ETCPAL_FEATURE_LOGGING);
     spdlog::shutdown();
@@ -98,36 +96,8 @@ int main(int argc, char* argv[])
         return EXIT_FAILURE;
     }
 
-#ifdef SACNLOGGER_EMBEDDED_BUILD
-    // Configure system.
-    if (config.systemConfig.networkConfig.dhcp)
-    {
-        SPDLOG_INFO("Network: DHCP");
-    }
-    else
-    {
-        SPDLOG_INFO("Network: {} / {} / {}", config.systemConfig.networkConfig.address.ToString(),
-                    config.systemConfig.networkConfig.mask.ToString(),
-                    config.systemConfig.networkConfig.gateway.ToString());
-    }
-    SPDLOG_INFO("NTP: {}", config.systemConfig.networkConfig.ntp ? "enabled" : "disabled");
-    if (config.systemConfig.networkConfig.ntpServer.isValid())
-    {
-        SPDLOG_INFO("Static NTP Server: {}", config.systemConfig.networkConfig.ntpServer.toString());
-    }
-    config.systemConfig.writeToSystem();
-#endif
-
-    SPDLOG_INFO("Using universes {}", config.universes);
-    SPDLOG_INFO("PAP = {}", config.usePap);
-
-    // Create monitors.
-    for (const auto universe : config.universes)
-    {
-        auto& universeMonitor = universeMonitors.emplace_back(universe);
-        universeMonitor.setUsePap(config.usePap);
-        universeMonitor.start();
-    }
+    sacnlogger::Runner runner(config);
+    runner.start();
 
     auto waiter = std::thread(
         []()
@@ -140,6 +110,7 @@ int main(int argc, char* argv[])
     waiter.join();
 
     SPDLOG_INFO("Stopping sACN logger");
+    runner.stop();
 
     return EXIT_SUCCESS;
 }
