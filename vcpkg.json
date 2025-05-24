@@ -35,5 +35,8 @@
   }, {
     "name" : "json-schema-validator",
     "version>=" : "2.3.0#2"
+  }, {
+    "name" : "boost-signals2",
+    "version>=" : "1.88.0"
   } ]
 }

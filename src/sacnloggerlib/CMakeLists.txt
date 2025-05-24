@@ -3,21 +3,25 @@ add_library(sacnloggerlib STATIC
         AddressOrHostname.cpp
         Config.cpp
         CsvRow.cpp
+        DiskSpaceMonitor.cpp
         Runner.cpp
         UniverseMonitor.cpp
 )
 
+
+find_package(boost_signals2 CONFIG REQUIRED)
 find_package(fmt CONFIG REQUIRED)
 find_package(nlohmann_json CONFIG REQUIRED)
 find_package(nlohmann_json_schema_validator CONFIG REQUIRED)
 include(sACN)
 find_package(spdlog CONFIG REQUIRED)
 target_link_libraries(sacnloggerlib PUBLIC
-        sacnlogger_config
+        Boost::signals2
         fmt::fmt
         nlohmann_json::nlohmann_json
         nlohmann_json_schema_validator::validator
         sACN
+        sacnlogger_config
         spdlog::spdlog
 )
 

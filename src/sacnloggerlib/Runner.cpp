@@ -20,8 +20,10 @@
  */
 
 #include "sacnloggerlib/Runner.h"
-#include <spdlog/spdlog.h>
 #include <fmt/ranges.h>
+#include <spdlog/spdlog.h>
+
+using namespace boost::placeholders;
 
 namespace sacnlogger
 {
@@ -49,6 +51,11 @@ namespace sacnlogger
 
         SPDLOG_INFO("Using universes {}", config_.universes);
         SPDLOG_INFO("PAP = {}", config_.usePap);
+
+        // Setup disk space monitor.
+        diskSpaceMonitor_.sigCriticalSpace.connect({&Runner::onCriticalDiskSpace, this, _1});
+        diskSpaceMonitor_.sigLowSpace.connect({&Runner::onLowDiskSpace, this, _1});
+        diskSpaceMonitor_.setPath(std::filesystem::current_path());
 
         // Create monitors.
         for (const auto universe : config_.universes)
@@ -80,6 +87,15 @@ namespace sacnlogger
         {
             start();
         }
+    }
+
+    void Runner::onLowDiskSpace(std::uintmax_t space) { SPDLOG_WARN("Low disk space: {} bytes available", space); }
+
+    void Runner::onCriticalDiskSpace(std::uintmax_t space)
+    {
+        SPDLOG_ERROR("Critical disk space: {} bytes available", space);
+        SPDLOG_ERROR("Stopping logger because of disk space.");
+        stop();
     }
 
 } // namespace sacnlogger

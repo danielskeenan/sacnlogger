@@ -27,6 +27,7 @@
 #endif
 
 #include <cstdint>
+#include <nlohmann/json_fwd.hpp>
 #include <string>
 #include <vector>
 #ifdef SACNLOGGER_SYSTEM_CONFIG

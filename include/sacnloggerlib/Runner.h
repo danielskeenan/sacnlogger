@@ -25,6 +25,7 @@
 #include <future>
 #include <vector>
 #include "Config.h"
+#include "DiskSpaceMonitor.h"
 #include "UniverseMonitor.h"
 
 namespace sacnlogger
@@ -68,6 +69,10 @@ namespace sacnlogger
         Config config_;
         bool running_ = false;
         std::vector<UniverseMonitor> universeMonitors_;
+        DiskSpaceMonitor diskSpaceMonitor_;
+
+        void onLowDiskSpace(std::uintmax_t space);
+        void onCriticalDiskSpace(std::uintmax_t space);
     };
 } // namespace sacnlogger
 
