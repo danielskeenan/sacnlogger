@@ -29,12 +29,13 @@
 #include <spdlog/spdlog.h>
 #include "sacnloggerlib/ConfigException.h"
 
+
+constexpr auto kUniverses = "universes";
+constexpr auto kUsePap = "usePap";
+constexpr auto kSystem = "system";
+
 namespace sacnlogger
 {
-    constexpr auto kUniverses = "universes";
-    constexpr auto kUsePap = "usePap";
-    constexpr auto kSystem = "system";
-
     const nlohmann::json_schema::json_validator& getValidator()
     {
         static std::optional<nlohmann::json_schema::json_validator> validator;
@@ -46,6 +47,36 @@ namespace sacnlogger
             validator->set_root_schema(schema);
         }
         return *validator;
+    }
+
+    void to_json(nlohmann::json& j, const Config& value)
+    {
+        j = nlohmann::json{
+            {kUniverses, value.universes},
+            {kUsePap, value.usePap},
+#ifdef SACNLOGGER_SYSTEM_CONFIG
+            {kSystem, value.systemConfig},
+#endif
+        };
+    }
+
+    void from_json(const nlohmann::json& j, Config& value)
+    {
+        nlohmann::json::const_iterator it;
+        if ((it = j.find(kUniverses)) != j.end())
+        {
+            it->get_to(value.universes);
+        }
+        if ((it = j.find(kUsePap)) != j.end())
+        {
+            it->get_to(value.usePap);
+        }
+#ifdef SACNLOGGER_SYSTEM_CONFIG
+        if ((it = j.find(kSystem)) != j.end())
+        {
+            it->get_to(value.systemConfig);
+        }
+#endif
     }
 
     Config Config::loadFromFile(const std::string& filename)
@@ -78,26 +109,14 @@ namespace sacnlogger
 
         // Load.
         Config config;
-        json[kUniverses].get_to(config.universes);
-        json[kUsePap].get_to(config.usePap);
-#ifdef SACNLOGGER_SYSTEM_CONFIG
-        if (json.contains(kSystem))
-        {
-            json[kSystem].get_to(config.systemConfig);
-        }
-#endif
+        json.get_to(config);
 
         return config;
     }
 
     void Config::saveToFile(const std::string& filename) const
     {
-        nlohmann::json json;
-        json[kUniverses] = universes;
-        json[kUsePap] = usePap;
-#ifdef SACNLOGGER_SYSTEM_CONFIG
-        json[kSystem] = systemConfig;
-#endif
+        nlohmann::json json = *this;
 
         // Validate resulting output only when building Debug build.
 #ifndef NDEBUG

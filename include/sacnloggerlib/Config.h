@@ -54,6 +54,9 @@ namespace sacnlogger
         void saveToFile(const std::string& filename) const;
     };
 
+    void to_json(nlohmann::json& j, const Config& value);
+    void from_json(const nlohmann::json& j, Config& value);
+
 } // namespace sacnlogger
 
 #endif // CONFIG_H

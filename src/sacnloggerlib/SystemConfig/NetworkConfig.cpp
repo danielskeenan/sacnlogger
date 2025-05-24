@@ -28,6 +28,13 @@
 #include <sdbus-c++/sdbus-c++.h>
 #include <spdlog/spdlog.h>
 
+constexpr auto kDhcp = "dhcp";
+constexpr auto kAddress = "address";
+constexpr auto kMask = "mask";
+constexpr auto kGateway = "gateway";
+constexpr auto kNtp = "ntp";
+constexpr auto kNtpServer = "ntpServer";
+
 namespace sacnlogger::detail
 {
     decltype(NetworkConfig::kNetworkdAddressFamilies) NetworkConfig::kNetworkdAddressFamilies = []()
@@ -38,6 +45,7 @@ namespace sacnlogger::detail
 
         return o;
     }();
+
     void NetworkConfig::readFromSystem()
     {
         NetworkConfig newNetworkConfig(dbus_);
@@ -193,21 +201,40 @@ namespace sacnlogger::detail
 
     void to_json(nlohmann::json& j, const NetworkConfig& value)
     {
-        j = nlohmann::json{{"dhcp", value.dhcp},
-                           {"address", value.address.ToString()},
-                           {"mask", value.mask.ToString()},
-                           {"gateway", value.gateway.ToString()},
-                           {"ntp", value.ntp},
-                           {"ntpServer", value.ntpServer.toString()}};
+        j = nlohmann::json{{kDhcp, value.dhcp},
+                           {kAddress, value.address.ToString()},
+                           {kMask, value.mask.ToString()},
+                           {kGateway, value.gateway.ToString()},
+                           {kNtp, value.ntp},
+                           {kNtpServer, value.ntpServer.toString()}};
     }
 
     void from_json(const nlohmann::json& j, NetworkConfig& value)
     {
-        j.at("dhcp").get_to(value.dhcp);
-        value.address = etcpal::IpAddr::FromString(j.at("address"));
-        value.mask = etcpal::IpAddr::FromString(j.at("mask"));
-        value.gateway = etcpal::IpAddr::FromString(j.at("gateway"));
-        j.at("ntp").get_to(value.ntp);
-        value.ntpServer = AddressOrHostname(j.at("ntpServer"));
+        nlohmann::json::const_iterator it;
+        if ((it = j.find(kDhcp)) != j.end())
+        {
+            it->get_to(value.dhcp);
+        }
+        if ((it = j.find(kAddress)) != j.end())
+        {
+            value.address = etcpal::IpAddr::FromString(*it);
+        }
+        if ((it = j.find(kMask)) != j.end())
+        {
+            value.mask = etcpal::IpAddr::FromString(*it);
+        }
+        if ((it = j.find(kGateway)) != j.end())
+        {
+            value.gateway = etcpal::IpAddr::FromString(*it);
+        }
+        if ((it = j.find(kNtp)) != j.end())
+        {
+            it->get_to(value.ntp);
+        }
+        if ((it = j.find(kNtpServer)) != j.end())
+        {
+            value.ntpServer = AddressOrHostname(*it);
+        }
     }
 } // namespace sacnlogger::detail
