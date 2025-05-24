@@ -1,0 +1,10 @@
+{
+  "universes": [
+    1
+  ],
+  "system": {
+    "network": {
+      "dhcp": true
+    }
+  }
+}

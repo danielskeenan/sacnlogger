@@ -24,7 +24,9 @@
 #include <catch2/generators/catch_generators_range.hpp>
 #include <fmt/format.h>
 #include <fmt/ranges.h>
+#include <fstream>
 #include <map>
+#include <nlohmann/json.hpp>
 #include <sacnloggerlib/ConfigException.h>
 #include "sacnloggerlib/Config.h"
 
@@ -67,9 +69,9 @@ TEST_CASE("Config Load")
     }
 
 #ifdef SACNLOGGER_SYSTEM_CONFIG
-    SECTION("Network")
+    SECTION("Network Static")
     {
-        const auto filePath = fmt::format("{}/ConfigTest/{}", RESOURCES_PATH, "network.json");
+        const auto filePath = fmt::format("{}/ConfigTest/{}", RESOURCES_PATH, "network_static.json");
 
         sacnlogger::Config expected{
             .universes = {1},
@@ -81,6 +83,21 @@ TEST_CASE("Config Load")
         expected.systemConfig.networkConfig.gateway = etcpal::IpAddr::FromString("192.168.1.1");
         expected.systemConfig.networkConfig.ntp = true;
         expected.systemConfig.networkConfig.ntpServer = "us.pool.ntp.org";
+
+        sacnlogger::Config actual;
+        REQUIRE_NOTHROW(actual = sacnlogger::Config::loadFromFile(filePath));
+        REQUIRE(expected == actual);
+    }
+
+    SECTION("Network DHCP")
+    {
+        const auto filePath = fmt::format("{}/ConfigTest/{}", RESOURCES_PATH, "network_dhcp.json");
+
+        sacnlogger::Config expected{
+            .universes = {1},
+            .usePap = false,
+        };
+        expected.systemConfig.networkConfig.dhcp = true;
 
         sacnlogger::Config actual;
         REQUIRE_NOTHROW(actual = sacnlogger::Config::loadFromFile(filePath));
@@ -109,4 +126,61 @@ TEST_CASE("Config Load")
             REQUIRE_THROWS_AS(sacnlogger::Config::loadFromFile(filePath), sacnlogger::ConfigException);
         }
     }
+}
+
+TEST_CASE("Config Save")
+{
+    // Start with default values.
+    nlohmann::json expected = sacnlogger::Config();
+    nlohmann::json actual;
+    SECTION("Standard")
+    {
+        const auto [expectedFilename, expectedConfig] = GENERATE(Catch::Generators::from_range(expectedConfigs));
+        const auto expectedFilePath = fmt::format("{}/ConfigTest/{}", RESOURCES_PATH, expectedFilename);
+        std::ifstream expectedFile(expectedFilePath);
+        REQUIRE(expectedFile.is_open());
+        expected.merge_patch(nlohmann::json::parse(expectedFile));
+        actual = expectedConfig;
+    }
+
+#ifdef SACNLOGGER_SYSTEM_CONFIG
+    SECTION("Network Static")
+    {
+        const auto expectedFilePath = fmt::format("{}/ConfigTest/{}", RESOURCES_PATH, "network_static.json");
+        std::ifstream expectedFile(expectedFilePath);
+        REQUIRE(expectedFile.is_open());
+        expected.merge_patch(nlohmann::json::parse(expectedFile));
+
+        sacnlogger::Config expectedConfig{
+            .universes = {1},
+            .usePap = false,
+        };
+        expectedConfig.systemConfig.networkConfig.dhcp = false;
+        expectedConfig.systemConfig.networkConfig.address = etcpal::IpAddr::FromString("192.168.1.101");
+        expectedConfig.systemConfig.networkConfig.mask = etcpal::IpAddr::FromString("255.255.255.0");
+        expectedConfig.systemConfig.networkConfig.gateway = etcpal::IpAddr::FromString("192.168.1.1");
+        expectedConfig.systemConfig.networkConfig.ntp = true;
+        expectedConfig.systemConfig.networkConfig.ntpServer = "us.pool.ntp.org";
+
+        actual = expectedConfig;
+    }
+
+    SECTION("Network DHCP")
+    {
+        const auto expectedFilePath = fmt::format("{}/ConfigTest/{}", RESOURCES_PATH, "network_dhcp.json");
+        std::ifstream expectedFile(expectedFilePath);
+        REQUIRE(expectedFile.is_open());
+        expected.merge_patch(nlohmann::json::parse(expectedFile));
+
+        sacnlogger::Config expectedConfig{
+            .universes = {1},
+            .usePap = false,
+        };
+        expectedConfig.systemConfig.networkConfig.dhcp = true;
+
+        actual = expectedConfig;
+    }
+#endif
+
+    CHECK(expected == actual);
 }
