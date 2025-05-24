@@ -63,7 +63,7 @@ foreach (RASPI5_PKG IN LISTS RASPI5_PKGS)
 endforeach ()
 set(RASPI5_IMG_DIR "${CMAKE_CURRENT_BINARY_DIR}/deploy")
 file(MAKE_DIRECTORY "${RASPI5_IMG_DIR}")
-set(RASPI5_IMG "${RASPI5_IMG_DIR}/${PROJECT_NAME}-${PROJECT_VERSION}-raspi5.img")
+set(RASPI5_IMG "${RASPI5_IMG_DIR}/${PROJECT_NAME}-${PROJECT_VERSION}-raspi5$<$<CONFIG:Debug>:-debug>.img")
 add_custom_command(OUTPUT "${RASPI5_IMG}"
         COMMAND ${CMAKE_COMMAND} -E env BUILDKIT_PROGRESS=plain "${DOCKER_PROG}" build
         --file "${PROJECT_SOURCE_DIR}/raspi/rpi_imagegen.dockerfile"
@@ -83,7 +83,6 @@ add_custom_command(OUTPUT "${RASPI5_IMG}"
         USES_TERMINAL
         WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
 )
-add_custom_target(${PROJECT_NAME}_raspi5 DEPENDS "${RASPI5_IMG}")
 # Determine image details.
 # Need to do this in two steps as configure_file doesn't know about generator expressions and file(GENERATE) doesn't
 # know about variable substitution. (https://discourse.cmake.org/t/configuring-a-file-that-has-both-substitution-and-generator-expressions/3064)
@@ -93,3 +92,14 @@ file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/build_$<LOWER_CASE:$<CONFIG>>.
         TARGET ${PROJECT_NAME}_raspi5
         NEWLINE_STYLE UNIX
 )
+
+# Compress image.
+set(RASPI5_IMG_ZSTD "${RASPI5_IMG}.zst")
+add_custom_command(OUTPUT "${RASPI5_IMG_ZSTD}"
+        COMMAND ${CMAKE_COMMAND}
+        -D "IMG_IN=${RASPI5_IMG}"
+        -D "IMG_OUT=${RASPI5_IMG_ZSTD}"
+        -P "${CMAKE_CURRENT_SOURCE_DIR}/compress_img.cmake"
+        DEPENDS "${RASPI5_IMG}"
+)
+add_custom_target(${PROJECT_NAME}_raspi5 DEPENDS "${RASPI5_IMG_ZSTD}")
