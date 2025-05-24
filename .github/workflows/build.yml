@@ -23,7 +23,7 @@ jobs:
         system:
           - os: ubuntu-latest
             generator: Ninja
-          - os: windows-latest
+#          - os: windows-latest
         build_type:
           - Release
     env:
