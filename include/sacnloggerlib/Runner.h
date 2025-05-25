@@ -27,6 +27,7 @@
 #include "Config.h"
 #include "DiskSpaceMonitor.h"
 #include "UniverseMonitor.h"
+#include "WebServer.h"
 
 namespace sacnlogger
 {
@@ -70,6 +71,7 @@ namespace sacnlogger
         bool running_ = false;
         std::vector<UniverseMonitor> universeMonitors_;
         DiskSpaceMonitor diskSpaceMonitor_;
+        WebServer webServer_;
 
         void onLowDiskSpace(std::uintmax_t space);
         void onCriticalDiskSpace(std::uintmax_t space);

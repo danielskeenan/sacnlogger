@@ -2,13 +2,15 @@ add_library(sacnloggerlib STATIC
         AbbreviationMap.cpp
         AddressOrHostname.cpp
         Config.cpp
+        CrowLogHandler.cpp
         CsvRow.cpp
         DiskSpaceMonitor.cpp
         Runner.cpp
         UniverseMonitor.cpp
+        WebServer.cpp
 )
 
-
+find_package(Crow CONFIG REQUIRED)
 find_package(boost_signals2 CONFIG REQUIRED)
 find_package(fmt CONFIG REQUIRED)
 find_package(nlohmann_json CONFIG REQUIRED)
@@ -16,6 +18,7 @@ find_package(nlohmann_json_schema_validator CONFIG REQUIRED)
 include(sACN)
 find_package(spdlog CONFIG REQUIRED)
 target_link_libraries(sacnloggerlib PUBLIC
+        Crow::Crow
         Boost::signals2
         fmt::fmt
         nlohmann_json::nlohmann_json
@@ -24,6 +27,7 @@ target_link_libraries(sacnloggerlib PUBLIC
         sacnlogger_config
         spdlog::spdlog
 )
+target_compile_definitions(sacnloggerlib PUBLIC "CROW_DISABLE_STATIC_DIR")
 
 if (EMBEDDED_BUILD)
     target_sources(sacnloggerlib PRIVATE

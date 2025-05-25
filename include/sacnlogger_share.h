@@ -45,6 +45,11 @@ namespace sacnlogger::config
     std::filesystem::path schemaDir();
 
     /**
+     * Path to web files.
+     */
+    std::filesystem::path webDir();
+
+    /**
      * Path to prefix where files should be installed.
      *
      * To change this for runtime, set the environment variable `SACNLOGGER_SYS_PREFIX`.

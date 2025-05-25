@@ -64,12 +64,17 @@ namespace sacnlogger
             universeMonitor.setUsePap(config_.usePap);
             universeMonitor.start();
         }
+
+        // Web server.
+        webServer_.run();
+
         running_ = true;
     }
 
     void Runner::stop()
     {
         universeMonitors_.clear();
+        webServer_.stop();
         running_ = false;
     }
 

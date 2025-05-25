@@ -42,6 +42,7 @@ namespace sacnlogger::config
                 // Use from environment.
                 resolvedShareDir = envShareDir;
             }
+            resolvedShareDir = std::filesystem::canonical(std::filesystem::absolute(resolvedShareDir));
         }
         return resolvedShareDir;
     }
@@ -49,6 +50,8 @@ namespace sacnlogger::config
     std::filesystem::path templateDir() { return shareDir() / "system_config" / "templates/"; }
 
     std::filesystem::path schemaDir() { return shareDir() / "schema/"; }
+
+    std::filesystem::path webDir() { return shareDir() / "web/"; }
 
     std::filesystem::path systemPrefix()
     {
@@ -64,7 +67,7 @@ namespace sacnlogger::config
             {
                 resolvedPrefix = sysPrefix;
             }
-            resolvedPrefix = std::filesystem::absolute(resolvedPrefix);
+            resolvedPrefix = std::filesystem::canonical(std::filesystem::absolute(resolvedPrefix));
         }
         return resolvedPrefix;
     }
