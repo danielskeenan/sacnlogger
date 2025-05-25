@@ -24,15 +24,60 @@
 
 #include <crow/app.h>
 #include <crow/middlewares/cors.h>
-
+#include <nlohmann/json_fwd.hpp>
 #include "CrowLogHandler.h"
 
 namespace sacnlogger
 {
+    class Runner;
+
+    namespace detail
+    {
+        struct ErrorMessage
+        {
+            explicit ErrorMessage() = default;
+
+            virtual ~ErrorMessage() = default;
+            virtual unsigned int code() = 0;
+            virtual const char* name() const = 0;
+            virtual std::string message() const = 0;
+            void addToResponse(crow::response& res);
+
+            nlohmann::json json() const;
+        };
+
+        struct UnsupportedTypeError : ErrorMessage
+        {
+            explicit UnsupportedTypeError(const std::vector<std::string>& allowedMimeTypes) :
+                ErrorMessage(), allowedMimeTypes_(allowedMimeTypes)
+            {
+            }
+
+            unsigned int code() override { return crow::status::UNSUPPORTED_MEDIA_TYPE; }
+            const char* name() const override { return "UnsupportedTypeError"; }
+            std::string message() const override;
+
+        private:
+            const std::vector<std::string> allowedMimeTypes_;
+        };
+
+        struct UnprocessableContentError : ErrorMessage
+        {
+            explicit UnprocessableContentError(const std::string& why) : ErrorMessage(), why_(why) {}
+
+            unsigned int code() override { return 422; }
+            const char* name() const override { return "UnprocessableContentError"; }
+            std::string message() const override;
+
+        private:
+            std::string why_;
+        };
+    } // namespace detail
+
     class WebServer
     {
     public:
-        explicit WebServer();
+        explicit WebServer(Runner* runner);
 
         void run();
         void stop();
@@ -41,6 +86,7 @@ namespace sacnlogger
     private:
         using CrowServer = crow::Crow<crow::CORSHandler>;
 
+        Runner* runner_;
         CrowServer server_;
         CrowLogHandler crowLogHandler_;
         std::future<void> serverHandle_;
@@ -50,7 +96,12 @@ namespace sacnlogger
          * @param res
          * @param path
          */
-        static void crowStaticFile(crow::response& res, const std::string& path);
+        static void rtStaticFile(crow::response& res, const std::string& path);
+        static void rtIndex(crow::response& res) { rtStaticFile(res, "index.html"); }
+        crow::response rtConfig(const crow::request& req);
+
+        static bool sendErrorIfNotOctetStream(const crow::request& req, crow::response& res);
+        static void sendSuccess(const crow::request& req, crow::response& res);
     };
 } // namespace sacnlogger
 

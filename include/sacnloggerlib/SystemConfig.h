@@ -23,6 +23,7 @@
 #define SYSTEMCONFIG_H
 
 #include <filesystem>
+#include <sacnlogger_messages/Config.h>
 #include "SystemConfig/NetworkConfig.h"
 
 namespace sdbus
@@ -52,7 +53,9 @@ namespace sacnlogger
         detail::NetworkConfig networkConfig;
 
         void readFromSystem();
+        void readFromMessage(const std::unique_ptr<message::SystemConfigT>& msg);
         void writeToSystem();
+        [[nodiscard]] std::unique_ptr<message::SystemConfigT> saveToMessage() const;
 
     private:
         // Allow testing with a fake dbus connection.

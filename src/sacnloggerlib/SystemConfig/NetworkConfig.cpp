@@ -20,7 +20,6 @@
  */
 
 #include "sacnloggerlib/SystemConfig/NetworkConfig.h"
-
 #include <boost/endian/arithmetic.hpp>
 #include <inja/inja.hpp>
 #include <nlohmann/json.hpp>
@@ -197,6 +196,30 @@ namespace sacnlogger::detail
         }
 
         return {};
+    }
+
+    void NetworkConfig::readFromMessage(const std::unique_ptr<message::NetworkConfigT>& msg)
+    {
+        assert(msg);
+        dhcp = msg->dhcp;
+        address = etcpal::IpAddr::FromString(msg->address);
+        mask = etcpal::IpAddr::FromString(msg->mask);
+        gateway = etcpal::IpAddr::FromString(msg->gateway);
+        ntp = msg->ntp;
+        ntpServer = msg->ntpServer;
+    }
+
+    std::unique_ptr<message::NetworkConfigT> NetworkConfig::saveToMessage() const
+    {
+        auto msg = std::make_unique<message::NetworkConfigT>();
+        msg->dhcp = dhcp;
+        msg->address = address.ToString();
+        msg->mask = mask.ToString();
+        msg->gateway = gateway.ToString();
+        msg->ntp = ntp;
+        msg->ntpServer = ntpServer.toString();
+
+        return msg;
     }
 
     void to_json(nlohmann::json& j, const NetworkConfig& value)

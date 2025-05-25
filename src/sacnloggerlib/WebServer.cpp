@@ -21,13 +21,42 @@
 
 #include "sacnloggerlib/WebServer.h"
 #include <fmt/format.h>
+#include <fmt/ranges.h>
+#include <nlohmann/json.hpp>
+#include <sacnloggerlib/ConfigException.h>
 #include <spdlog/spdlog.h>
-
 #include "sacnlogger_share.h"
+#include "sacnloggerlib/Runner.h"
 
 namespace sacnlogger
 {
-    WebServer::WebServer()
+
+    namespace detail
+    {
+        nlohmann::json ErrorMessage::json() const
+        {
+            return {
+                {"name", name()},
+                {"message", message()},
+            };
+        }
+
+        void ErrorMessage::addToResponse(crow::response& res)
+        {
+            res.code = code();
+            res.set_header("Content-Type", "application/json");
+            res.body = json().dump();
+        }
+
+        std::string UnsupportedTypeError::message() const
+        {
+            return fmt::format("Supported types: {}", allowedMimeTypes_);
+        }
+
+        std::string UnprocessableContentError::message() const { return fmt::format("Bad content format: {}", why_); }
+    } // namespace detail
+
+    WebServer::WebServer(Runner* runner) : runner_(runner)
     {
         // Setup HTTP server.
         crow::logger::setHandler(&crowLogHandler_);
@@ -36,12 +65,14 @@ namespace sacnlogger
         auto& cors = server_.get_middleware<crow::CORSHandler>();
         cors.global().methods(crow::HTTPMethod::Get).origin("*");
 
+        // Config
+        CROW_ROUTE(server_, "/rpc/config")
+            .methods(crow::HTTPMethod::Get,
+                     crow::HTTPMethod::POST)(std::bind(&WebServer::rtConfig, this, std::placeholders::_1));
+
         // Static content.
-        CROW_ROUTE(server_, "/")
-            .methods(crow::HTTPMethod::Get)([](crow::response& res) { crowStaticFile(res, "index.html"); });
-        CROW_ROUTE(server_, "/<path>")
-            .methods(crow::HTTPMethod::Get)([this](crow::response& res, const std::string& path)
-                                            { crowStaticFile(res, path); });
+        CROW_ROUTE(server_, "/").methods(crow::HTTPMethod::Get)(&WebServer::rtIndex);
+        CROW_ROUTE(server_, "/<path>").methods(crow::HTTPMethod::Get)(&WebServer::rtStaticFile);
     }
 
     void WebServer::run()
@@ -70,7 +101,7 @@ namespace sacnlogger
 
     std::string WebServer::getUrl() { return fmt::format("http://{}:{}", server_.bindaddr(), server_.port()); }
 
-    void WebServer::crowStaticFile(crow::response& res, const std::string& path)
+    void WebServer::rtStaticFile(crow::response& res, const std::string& path)
     {
         auto cleanPath = path;
         crow::utility::sanitize_filename(cleanPath);
@@ -91,6 +122,80 @@ namespace sacnlogger
         }
 
         res.end();
+    }
+
+    crow::response WebServer::rtConfig(const crow::request& req)
+    {
+        crow::response res;
+        if (sendErrorIfNotOctetStream(req, res))
+        {
+            return res;
+        }
+
+        if (req.method == crow::HTTPMethod::GET)
+        {
+            res.set_header("Content-Type", "application/octet-stream");
+            flatbuffers::FlatBufferBuilder fbb;
+            const auto msg = runner_->config().saveToMessage();
+            fbb.Finish(message::Config::Pack(fbb, msg.get()));
+            res.body.assign(fbb.GetBufferPointer(), fbb.GetBufferPointer() + fbb.GetSize());
+            return res;
+        }
+        else if (req.method == crow::HTTPMethod::POST)
+        {
+            const std::span data(reinterpret_cast<const uint8_t*>(req.body.data()), req.body.size());
+            flatbuffers::Verifier verifier(data.data(), data.size());
+            if (!message::VerifyConfigBuffer(verifier))
+            {
+                detail::UnprocessableContentError("Invalid format.").addToResponse(res);
+                return res;
+            }
+            try
+            {
+                const std::unique_ptr<message::ConfigT> msg(message::GetConfig(data.data())->UnPack());
+                const auto newConfig = Config::loadFromMessage(msg);
+                runner_->setConfig(newConfig);
+            }
+            catch (const std::exception& e)
+            {
+                detail::UnprocessableContentError(fmt::format("Bad message: {}", e.what())).addToResponse(res);
+                return res;
+            }
+        }
+        sendSuccess(req, res);
+        return res;
+    }
+
+    bool WebServer::sendErrorIfNotOctetStream(const crow::request& req, crow::response& res)
+    {
+        if (req.method == crow::HTTPMethod::GET)
+        {
+            if (req.get_header_value("Accept") != "application/octet-stream")
+            {
+                detail::UnsupportedTypeError({"application/octet-stream"}).addToResponse(res);
+                res.end();
+                return true;
+            }
+        }
+        else if (req.method == crow::HTTPMethod::POST)
+        {
+            if (req.get_header_value("Content-Type") != "application/octet-stream")
+            {
+                detail::UnsupportedTypeError({"application/octet-stream"}).addToResponse(res);
+                res.set_header("Accept-Post", "application/octet-stream");
+                res.end();
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    void WebServer::sendSuccess(const crow::request& req, crow::response& res)
+    {
+        res.set_header("Content-Type", "text/plain");
+        res.code = crow::status::OK;
+        res.body = "success";
     }
 
 } // namespace sacnlogger

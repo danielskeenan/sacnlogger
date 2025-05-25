@@ -93,13 +93,33 @@ namespace sacnlogger
             throw ConfigException("Error parsing config file", e);
         }
 
+        return loadFromJson(json);
+    }
+
+    Config Config::loadFromString(const std::string& str)
+    {
+        try
+        {
+            const nlohmann::json json(str);
+            return loadFromJson(json);
+        }
+        catch (const std::exception& e)
+        {
+            SPDLOG_CRITICAL("Error parsing config string: {}", e.what());
+            throw ConfigException("Error parsing config string", e);
+        }
+    }
+
+    Config Config::loadFromJson(const nlohmann::json& json)
+    {
         // Validate.
+        nlohmann::json mergedJson;
         const auto& validator = getValidator();
         try
         {
             // Apply default values.
             const auto patch = validator.validate(json);
-            json.patch_inplace(patch);
+            mergedJson = json.patch(patch);
         }
         catch (const std::exception& e)
         {
@@ -109,7 +129,7 @@ namespace sacnlogger
 
         // Load.
         Config config;
-        json.get_to(config);
+        mergedJson.get_to(config);
 
         return config;
     }
@@ -134,5 +154,33 @@ namespace sacnlogger
             SPDLOG_CRITICAL("Error saving config file: {}", e.what());
             throw ConfigException("Error saving config file", e);
         }
+    }
+
+    std::unique_ptr<message::ConfigT> Config::saveToMessage() const
+    {
+        auto msg = std::make_unique<message::ConfigT>();
+        msg->universes = universes;
+        msg->usePap = usePap;
+#ifdef SACNLOGGER_SYSTEM_CONFIG
+        msg->system = systemConfig.saveToMessage();
+#endif
+        return msg;
+    }
+
+    Config Config::loadFromMessage(const std::unique_ptr<message::ConfigT>& msg)
+    {
+        Config config;
+        if (std::ranges::any_of(msg->universes, [](const decltype(message::ConfigT::universes)::value_type val)
+                                { return val < sacn::kMinimumUniverse || val > sacn::kMaximumUniverse; }))
+        {
+            throw ConfigException("Universe out of range");
+        }
+        config.universes = msg->universes;
+        config.usePap = msg->usePap;
+#ifdef SACNLOGGER_SYSTEM_CONFIG
+        config.systemConfig.readFromMessage(msg->system);
+#endif
+
+        return config;
     }
 } // namespace sacnlogger

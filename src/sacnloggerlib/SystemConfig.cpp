@@ -45,11 +45,24 @@ namespace sacnlogger
 
     void SystemConfig::readFromSystem() { networkConfig.readFromSystem(); }
 
+    void SystemConfig::readFromMessage(const std::unique_ptr<message::SystemConfigT>& msg)
+    {
+        networkConfig.readFromMessage(msg->network);
+    }
+
     void SystemConfig::writeToSystem()
     {
         SPDLOG_INFO("Writing system config...");
         networkConfig.writeToSystem();
         SPDLOG_INFO("System config complete.");
+    }
+
+    std::unique_ptr<message::SystemConfigT> SystemConfig::saveToMessage() const
+    {
+        auto msg = std::make_unique<message::SystemConfigT>();
+        msg->network = networkConfig.saveToMessage();
+
+        return msg;
     }
 
     void to_json(nlohmann::json& j, const SystemConfig& value) { j = nlohmann::json{{kNetwork, value.networkConfig}}; }

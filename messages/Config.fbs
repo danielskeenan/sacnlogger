@@ -1,0 +1,22 @@
+namespace sacnlogger.message;
+
+table Config {
+    universes: [uint16];
+    use_pap: bool;
+    system: SystemConfig;
+}
+
+table SystemConfig {
+    network: NetworkConfig;
+}
+
+table NetworkConfig {
+    dhcp: bool;
+    address: string;
+    mask: string;
+    gateway: string;
+    ntp: bool;
+    ntp_server: string;
+}
+
+root_type Config;

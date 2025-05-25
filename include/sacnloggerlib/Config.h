@@ -28,11 +28,13 @@
 
 #include <cstdint>
 #include <nlohmann/json_fwd.hpp>
+#include <sacnlogger_messages/Config.h>
 #include <string>
 #include <vector>
 #ifdef SACNLOGGER_SYSTEM_CONFIG
 #include "SystemConfig.h"
 #endif
+
 
 namespace sacnlogger
 {
@@ -52,7 +54,11 @@ namespace sacnlogger
 #endif
 
         static Config loadFromFile(const std::string& filename);
+        static Config loadFromString(const std::string& str);
+        static Config loadFromJson(const nlohmann::json& json);
+        static Config loadFromMessage(const std::unique_ptr<message::ConfigT>& msg);
         void saveToFile(const std::string& filename) const;
+        [[nodiscard]] std::unique_ptr<message::ConfigT> saveToMessage() const;
     };
 
     void to_json(nlohmann::json& j, const Config& value);

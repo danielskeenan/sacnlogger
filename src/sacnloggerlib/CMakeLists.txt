@@ -25,6 +25,7 @@ target_link_libraries(sacnloggerlib PUBLIC
         nlohmann_json_schema_validator::validator
         sACN
         sacnlogger_config
+        sacnlogger_messages
         spdlog::spdlog
 )
 target_compile_definitions(sacnloggerlib PUBLIC "CROW_DISABLE_STATIC_DIR")

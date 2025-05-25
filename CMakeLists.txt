@@ -44,6 +44,7 @@ if (BUILD_EXEC)
     include(GNUInstallDirs)
     set(SHARE_DIR "../${CMAKE_INSTALL_DATADIR}/sacnlogger")
 
+    add_subdirectory(messages)
     add_subdirectory(src)
     add_subdirectory(webui)
 

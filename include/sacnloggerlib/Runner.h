@@ -37,7 +37,10 @@ namespace sacnlogger
     class Runner
     {
     public:
-        explicit Runner(const Config& config = {}) : config_(config) {}
+        using SigConfigChanged = boost::signals2::signal<void(const Config&)>;
+        SigConfigChanged sigConfigChanged;
+
+        explicit Runner(const Config& config = {}) : config_(config), webServer_(this) {}
 
         /**
          * Start the application (blocking).

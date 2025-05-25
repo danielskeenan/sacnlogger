@@ -27,6 +27,7 @@
 #include <etcpal/cpp/inet.h>
 #include <filesystem>
 #include <nlohmann/json_fwd.hpp>
+#include <sacnlogger_messages/Config.h>
 #include <sdbus-c++/IConnection.h>
 #include "AddressOrHostname.h"
 
@@ -51,7 +52,9 @@ namespace sacnlogger::detail
         AddressOrHostname ntpServer;
 
         void readFromSystem();
+        void readFromMessage(const std::unique_ptr<message::NetworkConfigT>& msg);
         void writeToSystem();
+        [[nodiscard]] std::unique_ptr<message::NetworkConfigT> saveToMessage() const;
 
     private:
         std::shared_ptr<sdbus::IConnection> dbus_;

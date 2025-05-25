@@ -89,6 +89,7 @@ namespace sacnlogger
         }
 
         config_ = config;
+        sigConfigChanged(config_);
 
         if (wasRunning)
         {
