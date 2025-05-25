@@ -49,6 +49,7 @@ namespace sacnlogger
         config_.systemConfig.writeToSystem();
 #endif
 
+        SPDLOG_INFO("Starting...");
         SPDLOG_INFO("Using universes {}", config_.universes);
         SPDLOG_INFO("PAP = {}", config_.usePap);
 
@@ -73,6 +74,7 @@ namespace sacnlogger
 
     void Runner::stop()
     {
+        SPDLOG_INFO("Stopping...");
         universeMonitors_.clear();
         webServer_.stop();
         running_ = false;

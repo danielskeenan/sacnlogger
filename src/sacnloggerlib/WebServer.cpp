@@ -31,7 +31,8 @@ namespace sacnlogger
     {
         // Setup HTTP server.
         crow::logger::setHandler(&crowLogHandler_);
-        server_.port(80).multithreaded();
+        // Crow will try to listen to signals by default, but we manage them ourselves.
+        server_.port(80).multithreaded().signal_clear();
         auto& cors = server_.get_middleware<crow::CORSHandler>();
         cors.global().methods(crow::HTTPMethod::Get).origin("*");
 
