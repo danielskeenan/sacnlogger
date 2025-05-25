@@ -6,6 +6,6 @@ export default defineConfig({
     plugins: [react()],
     build: {
         emptyOutDir: true,
-        outDir: "../cmake-build-release/webui/dist"
+        outDir: "../cmake-build-debug/webui/dist"
     }
 })

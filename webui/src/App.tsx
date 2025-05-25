@@ -1,35 +1,70 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import "./App.scss";
+import {Container, Nav, Navbar as BsNavbar} from "react-bootstrap";
+import {APP_NAME} from "./common/constants.ts";
+import {isRouteErrorResponse, Link, Outlet, useNavigation, useRouteError} from "react-router";
+import {Loading} from "./common/components/Loading.tsx";
+import {Links} from "./routes.ts";
 
-function App() {
-  const [count, setCount] = useState(0)
+export default function App() {
+    const navigation = useNavigation();
+    const isNavigating = Boolean(navigation.location);
 
-  return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+    return (
+        <div className="content-wrapper">
+            <Navbar/>
+
+            <Container as="main">
+                {isNavigating && <Loading/>}
+                <Outlet/>
+            </Container>
+        </div>
+    )
 }
 
-export default App
+export function Navbar() {
+    return (
+        <BsNavbar collapseOnSelect expand="lg"
+                  className="msacn-navbar-main"
+                  variant="dark"
+                  bg="primary"
+                  fixed="top"
+        >
+            <BsNavbar.Brand as={Link} to={Links.FRONT}>
+                {APP_NAME}
+            </BsNavbar.Brand>
+            <BsNavbar.Toggle aria-controls="msacn-navbar-content"/>
+            <BsNavbar.Collapse id="msacn-navbar-content">
+                <Nav className="me-auto">
+                    <Nav.Link href="/doc" target="_blank">
+                        Help
+                    </Nav.Link>
+                </Nav>
+            </BsNavbar.Collapse>
+        </BsNavbar>
+    );
+}
+
+export function ErrorBoundary() {
+    const error = useRouteError();
+    if (isRouteErrorResponse(error)) {
+        return (
+            <>
+                <h1>
+                    {error.status} {error.statusText}
+                </h1>
+                <p>{error.data}</p>
+            </>
+        );
+    } else if (error instanceof Error) {
+        return (
+            <div>
+                <h1>Error</h1>
+                <p>{error.message}</p>
+                <p>The stack trace is:</p>
+                <pre>{error.stack}</pre>
+            </div>
+        );
+    } else {
+        return <h1>Unknown Error</h1>;
+    }
+}
