@@ -36,6 +36,7 @@ namespace sacnlogger
                         std::scoped_lock lock(configMx_);
                         try
                         {
+                            // Check space.
                             const auto space = std::filesystem::space(path_);
                             if (space.available <= criticalSpaceThreshold_)
                             {
@@ -63,7 +64,17 @@ namespace sacnlogger
                         {
                             SPDLOG_WARN("DiskSpaceMonitor: {}", e.what());
                         }
-                        std::this_thread::sleep_for(pollPeriod_);
+
+                        // Wait for the next poll period, checking for stops more frequently.
+                        const auto continueAt = std::chrono::steady_clock::now() + pollPeriod_;
+                        while (std::chrono::steady_clock::now() < continueAt)
+                        {
+                            if (stop.stop_requested())
+                            {
+                                break;
+                            }
+                            std::this_thread::sleep_for(std::chrono::seconds(1));
+                        }
                     }
                 }
             });
