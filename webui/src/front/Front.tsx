@@ -5,8 +5,8 @@ export function Component() {
     setPageTitle();
 
     return (
-        <div>
+        <>
             <h1 className="display-5 fw-bold">{APP_NAME}</h1>
-        </div>
+        </>
     );
 }

@@ -16,6 +16,10 @@ const router = createBrowserRouter([
                 index: true,
                 lazy: () => import('./front/Front.tsx'),
             },
+            {
+                path: Links.CONFIG,
+                lazy: () => import('./config/Config.tsx'),
+            }
         ],
     },
 ]);

@@ -4,6 +4,7 @@ import {APP_NAME} from "./common/constants.ts";
 import {isRouteErrorResponse, Link, Outlet, useNavigation, useRouteError} from "react-router";
 import {Loading} from "./common/components/Loading.tsx";
 import {Links} from "./routes.ts";
+import ConfigTitle from "./config/ConfigTitle.tsx";
 
 export default function App() {
     const navigation = useNavigation();
@@ -35,6 +36,7 @@ export function Navbar() {
             <BsNavbar.Toggle aria-controls="msacn-navbar-content"/>
             <BsNavbar.Collapse id="msacn-navbar-content">
                 <Nav className="me-auto">
+                    <Nav.Link as={Link} to={Links.CONFIG}><ConfigTitle/></Nav.Link>
                     <Nav.Link href="/doc" target="_blank">
                         Help
                     </Nav.Link>

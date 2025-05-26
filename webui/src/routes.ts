@@ -1,3 +1,4 @@
 export const Links = {
-    FRONT: "/"
+    FRONT: "/",
+    CONFIG: "/config"
 };
