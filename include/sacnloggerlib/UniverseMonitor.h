@@ -128,6 +128,7 @@ namespace sacnlogger
         void setUsePap(bool usePap) { usePap_ = usePap; }
 
         void start();
+        void stop();
 
     private:
         static constexpr auto kLoggerPattern = "%Y-%m-%d %H:%M:%S.%e%z,%v";

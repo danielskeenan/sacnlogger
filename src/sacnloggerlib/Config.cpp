@@ -141,7 +141,16 @@ namespace sacnlogger
         // Validate resulting output only when building Debug build.
 #ifndef NDEBUG
         const auto& validator = getValidator();
-        validator.validate(json);
+        try
+        {
+            validator.validate(json);
+        }
+        catch (const std::exception& e)
+        {
+            SPDLOG_ERROR("Internally-build config file is invalid: {}", e.what());
+            SPDLOG_ERROR("{}", json.dump());
+            return;
+        }
 #endif
 
         try

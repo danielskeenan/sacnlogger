@@ -154,7 +154,15 @@ namespace sacnlogger
             {
                 const std::unique_ptr<message::ConfigT> msg(message::GetConfig(data.data())->UnPack());
                 const auto newConfig = Config::loadFromMessage(msg);
-                runner_->setConfig(newConfig);
+                configSaver_ = std::async(std::launch::async,
+                                          [this, newConfig]()
+                                          {
+                                              // Wait to apply config until response is sent.
+                                              SPDLOG_INFO("Reconfiguring, will restart in 10 seconds....");
+                                              std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+                                              runner_->setConfig(newConfig);
+                                              SPDLOG_INFO("Completed reconfiguring.");
+                                          });
             }
             catch (const std::exception& e)
             {

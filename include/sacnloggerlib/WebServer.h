@@ -65,7 +65,7 @@ namespace sacnlogger
         {
             explicit UnprocessableContentError(const std::string& why) : ErrorMessage(), why_(why) {}
 
-            unsigned int code() override { return 422; }
+            unsigned int code() override { return crow::status::BAD_REQUEST; }
             const char* name() const override { return "UnprocessableContentError"; }
             std::string message() const override;
 
@@ -90,6 +90,7 @@ namespace sacnlogger
         CrowServer server_;
         CrowLogHandler crowLogHandler_;
         std::future<void> serverHandle_;
+        std::future<void> configSaver_;
 
         /**
          * Set the response @p res to serve a static file @p path relative to sacnlogger::config::webDir().

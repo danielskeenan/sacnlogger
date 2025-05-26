@@ -188,4 +188,19 @@ namespace sacnlogger
         }
     }
 
+    void UniverseMonitor::stop()
+    {
+        mergeReceiver_->Shutdown();
+        mergeReceiver_.reset();
+        notifyHandler_.reset();
+        dataLogger_->flush();
+        const auto dataLoggerName = dataLogger_->name();
+        dataLogger_.reset();
+        spdlog::drop(dataLoggerName);
+        ;
+        const auto sourceLoggerName = sourceLogger_->name();
+        sourceLogger_.reset();
+        spdlog::drop(sourceLoggerName);
+    }
+
 } // namespace sacnlogger

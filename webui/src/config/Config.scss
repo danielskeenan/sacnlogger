@@ -1,14 +1,8 @@
 @import "../assets/styles/bootstrap";
 
 .sacnlogger-config-universes {
-  //width: fit-content;
   .list-group-item {
     min-width: fit-content;
     max-width: 10rem;
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-
-    @extend .gap-3;
   }
 }

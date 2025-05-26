@@ -1,15 +1,17 @@
 import "./Config.scss";
 import {faMinus, faPlus} from "@fortawesome/free-solid-svg-icons";
 import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
+import {Builder} from "flatbuffers";
 import {sortedUniq} from "lodash";
 import {useCallback, useEffect, useId, useState} from "react";
-import {Button, Form, ListGroup, Modal, Tab, Tabs} from "react-bootstrap";
+import {Button, Form, ListGroup, Modal, Stack, Tab, Tabs} from "react-bootstrap";
+import {Connecting, Throbber} from "../common/components/Loading.tsx";
 import {isValidUniverse, UNIVERSE_MAX, UNIVERSE_MIN} from "../common/constants.ts";
 import setPageTitle from "../common/setPageTitle.ts";
 import useFocus from "../common/useFocus.ts";
 import useHostHttp from "../common/useHostHttp.ts";
 import useOnNumberChange from "../common/useOnNumberInputChange.ts";
-import {Config} from "../messages/config.ts";
+import {Config, ConfigT} from "../messages/config.ts";
 import ConfigTitle from "./ConfigTitle.tsx";
 
 export function Component() {
@@ -17,8 +19,14 @@ export function Component() {
     // Properties.
     const [universes, setUniverses] = useState<number[]>([]);
     const [pap, setPap] = useState(false);
+    const setConfig = useCallback((config: ConfigT) => {
+        setUniverses(config.universes);
+        setPap(config.usePap);
+    }, [setUniverses, setPap]);
+
     // State.
-    const [ready, setReady] = useState(false);
+    const [initialConfig, setInitialConfig] = useState<ConfigT | null>(null);
+    const [saving, setSaving] = useState(false);
     const [addUniverseVisible, setAddUniverseVisible] = useState(false);
     const showAddUniverse = useCallback(() => {
         setAddUniverseVisible(true)
@@ -27,17 +35,35 @@ export function Component() {
         setAddUniverseVisible(false)
     }, [setAddUniverseVisible]);
 
-    // Getters.
-    const {hostGet} = useHostHttp();
-    useEffect(() => {
+    // RPC.
+    const {hostGet, hostPost} = useHostHttp();
+    const getConfig = useCallback(() => {
         hostGet("/rpc/config")
             .then((r) => {
                 const msg = Config.getRootAsConfig(r.data).unpack();
-                setUniverses(msg.universes);
-                setPap(msg.usePap);
-                setReady(true);
+                setConfig(msg);
+                setInitialConfig(msg);
             })
-    }, [hostGet, setReady, setUniverses, setPap]);
+    }, [hostGet, setInitialConfig, setConfig]);
+    const postConfig = () => {
+        setSaving(true);
+
+        const msg = new ConfigT();
+        msg.universes = universes;
+        msg.usePap = pap
+
+        const fbb = new Builder(1024);
+        Config.finishConfigBuffer(fbb, msg.pack(fbb));
+        const data = fbb.asUint8Array().slice();
+        hostPost("/rpc/config", data)
+            .then(() => {
+                setSaving(false);
+            });
+    };
+
+    useEffect(() => {
+        getConfig();
+    }, [getConfig]);
 
     // Setters.
     const addUniverse = useCallback((newUniverse: number) => {
@@ -52,6 +78,12 @@ export function Component() {
     const togglePap = useCallback(() => {
         setPap(!pap);
     }, [pap, setPap]);
+    const resetConfig = useCallback(() => {
+        if (!initialConfig) {
+            return;
+        }
+        setConfig(initialConfig);
+    }, [initialConfig, setConfig]);
 
     // Helpers.
     const nextUniverse = useCallback(() => {
@@ -65,11 +97,12 @@ export function Component() {
     return (
         <>
             <h1><ConfigTitle/></h1>
+            {!initialConfig && <Connecting/>}
 
-            {ready && (
-                <Tabs>
-                    <Tab title="sACN" eventKey="sacn">
-                        <Form>
+            {initialConfig && (
+                <Form>
+                    <Tabs>
+                        <Tab title="sACN" eventKey="sacn">
                             {/* Universes */}
                             <Form.Group className="mb-3">
                                 <Form.Label>Universes</Form.Label>
@@ -78,29 +111,44 @@ export function Component() {
                                         <ListGroup.Item>No universes</ListGroup.Item>
                                     )}
                                     {universes.map((universe) => (
-                                        <ListGroup.Item key={universe}>
-                                            <Button variant="outline-danger" onClick={() => removeUniverse(universe)}>
-                                                <FontAwesomeIcon icon={faMinus} title="Remove"/>
-                                            </Button>
-                                            <div>{universe}</div>
+                                        <ListGroup.Item key={universe} disabled={saving}>
+                                            <Stack direction="horizontal" gap={3}>
+                                                <Button variant="outline-danger"
+                                                        disabled={saving}
+                                                        onClick={() => removeUniverse(universe)}>
+                                                    <FontAwesomeIcon icon={faMinus} title="Remove"/>
+                                                </Button>
+                                                <div>{universe}</div>
+                                            </Stack>
                                         </ListGroup.Item>
                                     ))}
                                 </ListGroup>
-                                <Button variant="outline-success" onClick={showAddUniverse}>
+                                <Button variant="outline-success" disabled={saving} onClick={showAddUniverse}>
                                     <FontAwesomeIcon icon={faPlus}/>&nbsp;Add
                                 </Button>
                             </Form.Group>
 
                             {/* PAP */}
                             <Form.Group className="mb-3">
-                                <Form.Switch label="Use Per-Address-Priority" checked={pap} onChange={togglePap}/>
+                                <Form.Switch label="Use Per-Address-Priority" checked={pap} disabled={saving}
+                                             onChange={togglePap}/>
                             </Form.Group>
-                        </Form>
-                    </Tab>
-                    <Tab title="System" eventKey="system">
+                        </Tab>
+                        <Tab title="System" eventKey="system">
 
-                    </Tab>
-                </Tabs>
+                        </Tab>
+                    </Tabs>
+
+                    <Stack direction="horizontal" gap={3}>
+                        <Button type="submit" variant="primary" disabled={saving} onClick={postConfig}>
+                            {saving && <Throbber/>}
+                            Save
+                        </Button>
+                        <Button type="reset" variant="secondary" disabled={saving} onClick={resetConfig}>
+                            Revert
+                        </Button>
+                    </Stack>
+                </Form>
             )}
 
             {addUniverseVisible && (

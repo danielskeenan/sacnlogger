@@ -29,6 +29,7 @@ target_link_libraries(sacnloggerlib PUBLIC
         spdlog::spdlog
 )
 target_compile_definitions(sacnloggerlib PUBLIC "CROW_DISABLE_STATIC_DIR")
+target_compile_definitions(sacnloggerlib PUBLIC "$<$<CONFIG:Debug>:FLATBUFFERS_DEBUG_VERIFICATION_FAILURE>")
 
 if (EMBEDDED_BUILD)
     target_sources(sacnloggerlib PRIVATE

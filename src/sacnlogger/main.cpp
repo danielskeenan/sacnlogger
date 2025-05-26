@@ -50,6 +50,13 @@ int main(int argc, char* argv[])
 {
     argparse::ArgumentParser parser(sacnlogger::config::kProjectName, sacnlogger::config::kProjectVersion);
     parser.add_description(sacnlogger::config::kProjectDescription);
+    int verbosity = SPDLOG_LEVEL_INFO;
+    parser.add_argument("-v", "--verbose")
+        .action([&verbosity](const auto&) { verbosity = std::max(0, verbosity - 1); })
+        .append()
+        .default_value(false)
+        .implicit_value(true)
+        .nargs(0);
     parser.add_argument("config").help("path to configuration file");
     try
     {
@@ -64,8 +71,10 @@ int main(int argc, char* argv[])
 
     // Setup logger.
     auto logger = spdlog::stdout_color_mt("app");
+    logger->set_level(static_cast<spdlog::level::level_enum>(verbosity));
     spdlog::set_default_logger(logger);
     spdlog::default_logger()->sinks().emplace_back(new spdlog::sinks::rotating_file_sink_mt("app.log", 5242880, 99));
+    SPDLOG_INFO("Log level {}", spdlog::level::to_string_view(logger->level()));
     SPDLOG_INFO("Starting sACN logger");
 
     // Setup EtcPal.
@@ -86,18 +95,16 @@ int main(int argc, char* argv[])
 #endif
 
     // Load config.
-    sacnlogger::Config config;
+    std::unique_ptr<sacnlogger::Runner> runner;
     try
     {
-        config = sacnlogger::Config::loadFromFile(parser.get<std::string>("config"));
+        runner = std::make_unique<sacnlogger::Runner>(parser.get<std::string>("config"));
+        runner->start();
     }
     catch (const sacnlogger::ConfigException& e)
     {
         return EXIT_FAILURE;
     }
-
-    sacnlogger::Runner runner(config);
-    runner.start();
 
     auto waiter = std::thread(
         []()
@@ -110,7 +117,7 @@ int main(int argc, char* argv[])
     waiter.join();
 
     SPDLOG_INFO("Stopping sACN logger");
-    runner.stop();
+    runner->stop();
 
     return EXIT_SUCCESS;
 }

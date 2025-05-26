@@ -41,6 +41,7 @@ namespace sacnlogger
         SigConfigChanged sigConfigChanged;
 
         explicit Runner(const Config& config = {}) : config_(config), webServer_(this) {}
+        explicit Runner(const std::string& configFilePath = {});
 
         /**
          * Start the application (blocking).
@@ -70,10 +71,11 @@ namespace sacnlogger
         void setConfig(const Config& config);
 
     private:
+        std::string configFilePath_;
         Config config_;
         bool running_ = false;
         std::vector<UniverseMonitor> universeMonitors_;
-        DiskSpaceMonitor diskSpaceMonitor_;
+        std::unique_ptr<DiskSpaceMonitor> diskSpaceMonitor_;
         WebServer webServer_;
 
         void onLowDiskSpace(std::uintmax_t space);

@@ -27,6 +27,11 @@ using namespace boost::placeholders;
 
 namespace sacnlogger
 {
+    Runner::Runner(const std::string& configFilePath) : Runner(Config::loadFromFile(configFilePath))
+    {
+        configFilePath_ = configFilePath;
+    }
+
     void Runner::start()
     {
 #ifdef SACNLOGGER_EMBEDDED_BUILD
@@ -54,9 +59,10 @@ namespace sacnlogger
         SPDLOG_INFO("PAP = {}", config_.usePap);
 
         // Setup disk space monitor.
-        diskSpaceMonitor_.sigCriticalSpace.connect({&Runner::onCriticalDiskSpace, this, _1});
-        diskSpaceMonitor_.sigLowSpace.connect({&Runner::onLowDiskSpace, this, _1});
-        diskSpaceMonitor_.setPath(std::filesystem::current_path());
+        diskSpaceMonitor_ = std::make_unique<DiskSpaceMonitor>();
+        diskSpaceMonitor_->sigCriticalSpace.connect({&Runner::onCriticalDiskSpace, this, _1});
+        diskSpaceMonitor_->sigLowSpace.connect({&Runner::onLowDiskSpace, this, _1});
+        diskSpaceMonitor_->setPath(std::filesystem::current_path());
 
         // Create monitors.
         for (const auto universe : config_.universes)
@@ -75,7 +81,12 @@ namespace sacnlogger
     void Runner::stop()
     {
         SPDLOG_INFO("Stopping...");
+        for (auto& universeMonitor : universeMonitors_)
+        {
+            universeMonitor.stop();
+        }
         universeMonitors_.clear();
+        diskSpaceMonitor_.reset();
         webServer_.stop();
         running_ = false;
     }
@@ -89,6 +100,10 @@ namespace sacnlogger
         }
 
         config_ = config;
+        if (!configFilePath_.empty())
+        {
+            config_.saveToFile(configFilePath_);
+        }
         sigConfigChanged(config_);
 
         if (wasRunning)

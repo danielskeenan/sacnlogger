@@ -47,6 +47,10 @@ namespace sacnlogger
 
     void SystemConfig::readFromMessage(const std::unique_ptr<message::SystemConfigT>& msg)
     {
+        if (!msg)
+        {
+            return;
+        }
         networkConfig.readFromMessage(msg->network);
     }
 

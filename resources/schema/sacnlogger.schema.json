@@ -7,6 +7,10 @@
       "oneOf": [
         {
           "type": "string",
+          "const": ""
+        },
+        {
+          "type": "string",
           "format": "ipv4"
         },
         {
